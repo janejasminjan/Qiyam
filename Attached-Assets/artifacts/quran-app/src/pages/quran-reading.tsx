@@ -1709,22 +1709,29 @@ export default function QuranReading() {
       // bail out immediately so the stale callback doesn't restart playback.
       const doPlay = () => {
         if (audioRef.current !== audio) return;
+        audio.muted = false;
         audio.play().catch(() => { if (audioRef.current === audio) stopAudio(); });
       };
 
       const doSeek = () => {
         if (audioRef.current !== audio) return;
         const targetSec = verseTiming.from / 1000;
-        // Attach the seeked listener BEFORE setting currentTime so we never
-        // miss the event, and avoid the unreliable `audio.seeking` check
-        // (Chrome can return false for in-buffer seeks even before currentTime
-        // has actually updated, causing play() to fire from position 0).
-        // Special-case: if we're already at the target (e.g. first ayah of
-        // surah, from = 0) the browser won't fire seeked — call doPlay directly.
+        // Special-case: already at the target position (e.g. first ayah at t=0).
+        // The browser won't fire a seeked event, so call doPlay directly.
         if (Math.abs(audio.currentTime - targetSec) < 0.05) {
           doPlay();
         } else {
-          audio.addEventListener("seeked", doPlay, { once: true });
+          // Mute before seeking so no audio from the wrong position (e.g. the
+          // surah-file's position-0 Basmala) leaks out while the browser's
+          // output pipeline repositions itself. One RAF after 'seeked' ensures
+          // the hardware buffer has fully flushed before we unmute and play.
+          audio.muted = true;
+          audio.addEventListener("seeked", () => {
+            requestAnimationFrame(() => {
+              if (audioRef.current !== audio) { audio.muted = false; return; }
+              doPlay();
+            });
+          }, { once: true });
           audio.currentTime = targetSec;
         }
       };
