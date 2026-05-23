@@ -1324,12 +1324,12 @@ export default function QuranReading() {
   const activeWordIdxRef   = useRef<number | null>(null);
   const rafRef             = useRef<number>(0);
 
-  // Persistent audio element reused across ayahs for the QuranCDN surah-file
-  // path. Keeping the same element means the browser retains its network buffer
-  // between ayahs, so seeks are instant instead of triggering a stall-and-resume
-  // that sounds like the first word is played twice.
+  // Kept for cleanup purposes only — no longer used for playback.
   const surahAudioRef    = useRef<HTMLAudioElement | null>(null);
   const surahAudioUrlRef = useRef<string>("");
+
+  // Preloaded audio for the next verse — avoids any gap between verses.
+  const nextAudioRef = useRef<{ ayah: number; el: HTMLAudioElement } | null>(null);
 
   // Surah completion — shown only after last ayah finishes or user scrolls to the end
   const [surahCompleted, setSurahCompleted] = useState(false);
@@ -1548,6 +1548,11 @@ export default function QuranReading() {
         surahAudioRef.current = null;
         surahAudioUrlRef.current = "";
       }
+      if (nextAudioRef.current) {
+        nextAudioRef.current.el.removeAttribute("src");
+        nextAudioRef.current.el.load();
+        nextAudioRef.current = null;
+      }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1638,19 +1643,20 @@ export default function QuranReading() {
     rafRef.current = 0;
     if (audioRef.current) {
       const old = audioRef.current;
-      // Null the ref FIRST so any in-flight async callbacks (loadedmetadata,
-      // seeked, doPlay) see audioRef.current !== old and bail out immediately.
+      // Null the ref FIRST so any in-flight callbacks bail out immediately.
       audioRef.current = null;
+      old.muted = true;
       old.pause();
-      old.onended = null;
+      old.onended      = null;
       old.ontimeupdate = null;
-      // Only abort the network load for per-ayah (islamic.network) elements.
-      // The persistent surah audio element (surahAudioRef) is kept alive so
-      // the browser preserves its buffer for instant seeks on the next play.
-      if (old !== surahAudioRef.current) {
-        old.removeAttribute("src");
-        old.load();
-      }
+      old.removeAttribute("src");
+      old.load();
+    }
+    // Discard any preloaded next-verse element.
+    if (nextAudioRef.current) {
+      nextAudioRef.current.el.removeAttribute("src");
+      nextAudioRef.current.el.load();
+      nextAudioRef.current = null;
     }
     setIsPlaying(false);
     setActiveAyah(null);
@@ -1661,65 +1667,45 @@ export default function QuranReading() {
   const playAyah = useCallback((ayahNumber: number) => {
     cancelAnimationFrame(rafRef.current);
     rafRef.current = 0;
+    // Fully abort any previous audio immediately — mute first so the hardware
+    // pipeline is silenced before the network request is cancelled.
     if (audioRef.current) {
       const prev = audioRef.current;
-      // Mute before pausing so any pre-buffered audio in the hardware pipeline
-      // is silenced immediately — prevents the old verse from bleeding into the
-      // new one while the browser's output buffer drains.
+      audioRef.current = null;
       prev.muted = true;
       prev.pause();
       prev.onended      = null;
       prev.ontimeupdate = null;
-      // For per-ayah (islamic.network) elements — not the persistent surah file
-      // — fully abort the network request so the browser cannot resume playback
-      // from a stale buffer later.
-      if (prev !== surahAudioRef.current) {
-        prev.removeAttribute("src");
-        prev.load();
-      }
+      prev.removeAttribute("src");
+      prev.load();
     }
 
-    const verseKey    = `${surahNum}:${ayahNumber}`;
-    const timingData  = surahTimingDataRef.current;
-    const verseTiming = timingData?.verses[verseKey] ?? null;
+    const verseKey  = `${surahNum}:${ayahNumber}`;
+    const timing    = surahTimingDataRef.current?.verses[verseKey] ?? null;
 
-    // ── Choose / reuse audio element ──────────────────────────────────────
-    // For the QuranCDN surah-file path we reuse a single persistent element
-    // across all ayahs. Keeping the same element means the browser retains its
-    // network buffer between verses, so seeks are instantaneous rather than
-    // triggering a buffering stall that sounds like the first word plays twice.
+    // ── Always use a per-ayah audio element — no seeking within a surah ──
+    // Seeking inside a large CDN-hosted surah file causes the browser's audio
+    // hardware pipeline to briefly output from position 0 (the Basmala) before
+    // repositioning, producing the "first word plays twice" artefact.
+    // Individual per-ayah MP3s start at t=0 with the correct content every time.
     let audio: HTMLAudioElement;
-    if (verseTiming) {
-      const surahUrl = timingData!.audioUrl;
-      if (surahAudioRef.current && surahAudioUrlRef.current === surahUrl) {
-        // Reuse the existing element — just pause before seeking.
-        audio = surahAudioRef.current;
-        audio.pause();
-      } else {
-        // First play for this surah+reciter: create a fresh element.
-        if (surahAudioRef.current) {
-          surahAudioRef.current.pause();
-          surahAudioRef.current.removeAttribute("src");
-          surahAudioRef.current.load();
-        }
-        audio = new Audio(surahUrl);
-        audio.preload = "auto";
-        surahAudioRef.current    = audio;
-        surahAudioUrlRef.current = surahUrl;
-      }
+    if (nextAudioRef.current?.ayah === ayahNumber) {
+      // Reuse the element we preloaded while the previous verse was playing.
+      audio = nextAudioRef.current.el;
+      nextAudioRef.current = null;
     } else {
-      // Per-ayah islamic.network fallback: always a fresh element.
       audio = new Audio(getAudioUrl(surahNum, ayahNumber, localReciter));
     }
+    audio.muted        = false;
     audio.playbackRate = speed;
-    audioRef.current = audio;
+    audioRef.current   = audio;
 
     setActiveAyah(ayahNumber);
     setIsPlaying(true);
     setActiveWordIndex(null);
     activeWordIdxRef.current = null;
 
-    // Shared "advance to next" logic used by both code paths
+    // Shared advance-to-next logic
     const advance = () => {
       if (repeatMode === "ayah") {
         playAyah(ayahNumber);
@@ -1736,94 +1722,59 @@ export default function QuranReading() {
       }
     };
 
-    if (verseTiming) {
-      // ── QuranCDN surah audio: seek to verse start, stop at verse end ──
-      //
-      // Guard every async callback: if the audio element has been replaced
-      // (stopAudio() or a new playAyah() call happened while we were seeking),
-      // bail out immediately so the stale callback doesn't restart playback.
-      const doPlay = () => {
-        if (audioRef.current !== audio) return;
-        audio.muted = false;
-        audio.play().catch(() => { if (audioRef.current === audio) stopAudio(); });
-      };
-
-      const doSeek = () => {
-        if (audioRef.current !== audio) return;
-        const targetSec = verseTiming.from / 1000;
-        // Special-case: already at the target position (e.g. first ayah at t=0).
-        // The browser won't fire a seeked event, so call doPlay directly.
-        if (Math.abs(audio.currentTime - targetSec) < 0.05) {
-          doPlay();
-        } else {
-          // Mute before seeking so no audio from the wrong position (e.g. the
-          // surah-file's position-0 Basmala) leaks out while the browser's
-          // output pipeline repositions itself. One RAF after 'seeked' ensures
-          // the hardware buffer has fully flushed before we unmute and play.
-          audio.muted = true;
-          audio.addEventListener("seeked", () => {
-            requestAnimationFrame(() => {
-              if (audioRef.current !== audio) { audio.muted = false; return; }
-              doPlay();
-            });
-          }, { once: true });
-          audio.currentTime = targetSec;
-        }
-      };
-
-      const seekAndPlay = () => {
-        if (audioRef.current !== audio) return;
-        doSeek();
-      };
-
-      if (audio.readyState >= 1) {
-        seekAndPlay();
-      } else {
-        audio.addEventListener("loadedmetadata", seekAndPlay, { once: true });
-        audio.load();
-      }
-
-      // ── RAF-based word highlight (replaces ontimeupdate) ───────────────
-      // requestAnimationFrame polls at ~60 fps so even short words (~100 ms)
-      // are highlighted correctly, with no lag.
+    if (timing) {
+      // ── RAF-based word highlight with RELATIVE timestamps ─────────────
+      // QuranCDN segments are absolute within the surah audio file, so we
+      // subtract timing.from to convert them to offsets from this verse start.
+      const fromMs = timing.from;
       const tick = () => {
-        // Stop if this audio element has been replaced
         if (audioRef.current !== audio) return;
-
-        const absMs = audio.currentTime * 1000;
-
-        // Verse boundary reached → advance to next ayah
-        if (absMs > 0 && absMs >= verseTiming.to) {
-          cancelAnimationFrame(rafRef.current);
-          rafRef.current = 0;
-          audio.pause();
-          setIsPlaying(false);
-          setActiveWordIndex(null);
-          activeWordIdxRef.current = null;
-          advance();
-          return;
-        }
-
-        // Word-level highlight using absolute timestamps
         if (!audio.paused) {
-          const segs = verseTiming.segments;
+          const relMs = audio.currentTime * 1000;
+          const segs  = timing.segments;
           let newIdx: number | null = null;
           for (let i = 0; i < segs.length; i++) {
-            if (absMs >= segs[i][0] && absMs < segs[i][1]) { newIdx = i; break; }
+            if (relMs >= segs[i][0] - fromMs && relMs < segs[i][1] - fromMs) {
+              newIdx = i;
+              break;
+            }
           }
           if (newIdx !== activeWordIdxRef.current) {
             activeWordIdxRef.current = newIdx;
             setActiveWordIndex(newIdx);
           }
         }
-
         rafRef.current = requestAnimationFrame(tick);
+      };
+      audio.onended = () => {
+        if (audioRef.current !== audio) return;
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = 0;
+        setActiveWordIndex(null);
+        activeWordIdxRef.current = null;
+        advance();
       };
       rafRef.current = requestAnimationFrame(tick);
     } else {
-      // ── islamic.network per-ayah audio (no word timing) ──────────────
       audio.onended = advance;
-      audio.play().catch(() => stopAudio());
+    }
+
+    audio.play().catch(() => { if (audioRef.current === audio) stopAudio(); });
+
+    // ── Preload the next verse so playback is seamless ────────────────────
+    const nextAyah = ayahNumber + 1;
+    if (surah && nextAyah <= surah.numberOfAyahs) {
+      // Discard a stale preload for a different verse.
+      if (nextAudioRef.current && nextAudioRef.current.ayah !== nextAyah) {
+        nextAudioRef.current.el.removeAttribute("src");
+        nextAudioRef.current.el.load();
+        nextAudioRef.current = null;
+      }
+      if (!nextAudioRef.current) {
+        const preloadEl = new Audio(getAudioUrl(surahNum, nextAyah, localReciter));
+        preloadEl.preload = "auto";
+        nextAudioRef.current = { ayah: nextAyah, el: preloadEl };
+      }
     }
   }, [surahNum, localReciter, speed, repeatMode, surah, stopAudio]);
 
