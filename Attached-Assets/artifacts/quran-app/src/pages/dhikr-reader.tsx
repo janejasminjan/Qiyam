@@ -225,7 +225,7 @@ function EntryCard({
 }
 
 /* ══════════════════════════════════════════════════════════════ */
-/*  Section                                                       */
+/*  Section — card layout (default)                              */
 /* ══════════════════════════════════════════════════════════════ */
 interface SectionBlockProps {
   section: DhikrSection;
@@ -266,6 +266,122 @@ function SectionBlock({ section, fontSizeIdx, showTranslit, showTranslation, cou
           onReset={() => onReset(entry.id)}
         />
       ))}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════ */
+/*  Prose entry — used inside PageSection                        */
+/* ══════════════════════════════════════════════════════════════ */
+interface ProseEntryProps {
+  entry: DhikrEntry;
+  fontSizeIdx: number;
+  showTranslit: boolean;
+  showTranslation: boolean;
+}
+
+function ProseEntry({ entry, fontSizeIdx, showTranslit, showTranslation }: ProseEntryProps) {
+  const sz = FONT_SIZES[fontSizeIdx];
+  return (
+    <div className="space-y-1.5">
+      <p
+        dir="rtl"
+        lang="ar"
+        className={`font-arabic ${sz.arabic} ${sz.lineHeight} text-foreground text-right leading-loose`}
+      >
+        {entry.arabic}
+      </p>
+      <AnimatePresence>
+        {showTranslit && entry.transliteration && (
+          <motion.p
+            key="translit"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="text-sm italic text-muted-foreground leading-relaxed"
+          >
+            {entry.transliteration}
+          </motion.p>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showTranslation && (
+          <motion.p
+            key="translation"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="text-sm text-foreground/70 leading-relaxed"
+          >
+            {entry.translation}
+            {entry.count > 1 && (
+              <span className="ml-1.5 text-[11px] font-semibold text-primary/60">
+                (×{entry.count})
+              </span>
+            )}
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════ */
+/*  Section — pages layout                                        */
+/*  Renders entries as flowing prose; useCard entries get a      */
+/*  full counter card embedded inline.                           */
+/* ══════════════════════════════════════════════════════════════ */
+interface PageSectionProps extends SectionBlockProps {}
+
+function PageSection({ section, fontSizeIdx, showTranslit, showTranslation, counters, onIncrement, onReset }: PageSectionProps) {
+  return (
+    <div id={`section-${section.id}`} className="scroll-mt-36">
+      {/* Page card */}
+      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+        {/* Page header */}
+        <div className="flex items-baseline gap-3 px-5 py-3 border-b border-border/60 bg-muted/30">
+          <h2 className="font-semibold text-foreground text-sm tracking-wide">{section.title}</h2>
+          {section.arabicTitle && (
+            <span className="font-arabic text-base text-primary/70 leading-none" dir="rtl">
+              {section.arabicTitle}
+            </span>
+          )}
+        </div>
+
+        {/* Entries — prose with optional inline counter card */}
+        <div className="px-5 py-5 space-y-5">
+          {section.entries.map((entry, idx) => (
+            entry.useCard ? (
+              /* Counter card — full interactive card embedded in the page */
+              <EntryCard
+                key={entry.id}
+                entry={entry}
+                index={idx}
+                fontSizeIdx={fontSizeIdx}
+                showTranslit={showTranslit}
+                showTranslation={showTranslation}
+                count={counters[entry.id] ?? 0}
+                onIncrement={() => onIncrement(entry.id, entry.count)}
+                onReset={() => onReset(entry.id)}
+              />
+            ) : (
+              /* Prose verse */
+              <div key={entry.id}>
+                <ProseEntry
+                  entry={entry}
+                  fontSizeIdx={fontSizeIdx}
+                  showTranslit={showTranslit}
+                  showTranslation={showTranslation}
+                />
+                {/* Thin divider between prose verses (not after last) */}
+                {idx < section.entries.length - 1 && !section.entries[idx + 1]?.useCard && (
+                  <div className="mt-5 border-t border-border/40" />
+                )}
+              </div>
+            )
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -639,18 +755,31 @@ export default function DhikrReader() {
               </p>
 
               {/* Sections */}
-              {collection.sections.map((section) => (
-                <SectionBlock
-                  key={section.id}
-                  section={section}
-                  fontSizeIdx={fontSizeIdx}
-                  showTranslit={showTranslit}
-                  showTranslation={showTranslation}
-                  counters={counters}
-                  onIncrement={increment}
-                  onReset={reset}
-                />
-              ))}
+              {collection.sections.map((section) =>
+                collection.layout === "pages" ? (
+                  <PageSection
+                    key={section.id}
+                    section={section}
+                    fontSizeIdx={fontSizeIdx}
+                    showTranslit={showTranslit}
+                    showTranslation={showTranslation}
+                    counters={counters}
+                    onIncrement={increment}
+                    onReset={reset}
+                  />
+                ) : (
+                  <SectionBlock
+                    key={section.id}
+                    section={section}
+                    fontSizeIdx={fontSizeIdx}
+                    showTranslit={showTranslit}
+                    showTranslation={showTranslation}
+                    counters={counters}
+                    onIncrement={increment}
+                    onReset={reset}
+                  />
+                )
+              )}
 
               {/* Closing note */}
               <div className="text-center py-6 space-y-1">

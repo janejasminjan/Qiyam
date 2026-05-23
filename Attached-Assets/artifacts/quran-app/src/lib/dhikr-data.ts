@@ -16,6 +16,8 @@ export interface DhikrEntry {
   isQuran?: boolean;
   flagged?: boolean;
   flagNote?: string;
+  /** If true, always render as a counter card even in "pages" layout */
+  useCard?: boolean;
 }
 
 export interface DhikrSection {
@@ -36,6 +38,12 @@ export interface DhikrCollection {
   sections: DhikrSection[];
   /** If set, the reader renders an embedded PDF viewer instead of cards */
   pdfPath?: string;
+  /**
+   * "cards" (default) — each entry is an individual interactive card.
+   * "pages" — entries flow as continuous reading prose; only entries with
+   *            useCard:true are rendered as interactive counter cards.
+   */
+  layout?: "cards" | "pages";
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -237,6 +245,7 @@ const duaSubah: DhikrCollection = {
   description:
     "A comprehensive morning supplication combining tasbih, durood, and supplications for forgiveness, guidance, and spiritual illumination. Recited after Fajr prayer.",
   icon: "🌄",
+  layout: "pages",
   sections: [
     {
       id: "des-page1",
@@ -260,6 +269,7 @@ const duaSubah: DhikrCollection = {
             "Glory be to Allah and all praise is His; glory be to Allah the Magnificent and all praise is His. I seek forgiveness from Allah and repent to Him.",
           count: 100,
           source: "تسبیح — recite 100 times",
+          useCard: true,
         },
         {
           id: "des-p1-istighfar",
