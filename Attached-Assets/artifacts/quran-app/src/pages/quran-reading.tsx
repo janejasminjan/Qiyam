@@ -1528,6 +1528,29 @@ export default function QuranReading() {
     };
   }, []);
 
+  // Stop all audio immediately when the user navigates away from this page.
+  // Uses refs directly (not the stopAudio callback) so the closure is always
+  // fresh and we never accidentally hold on to stale state.
+  useEffect(() => {
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+      if (audioRef.current) {
+        audioRef.current.muted = true;
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      if (surahAudioRef.current) {
+        surahAudioRef.current.muted = true;
+        surahAudioRef.current.pause();
+        surahAudioRef.current.removeAttribute("src");
+        surahAudioRef.current.load();
+        surahAudioRef.current = null;
+        surahAudioUrlRef.current = "";
+      }
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   /* ── Fetch word-level timing data for current surah ─────── */
   useEffect(() => {
     // Discard the persistent surah audio element whenever the surah or reciter
@@ -1639,9 +1662,21 @@ export default function QuranReading() {
     cancelAnimationFrame(rafRef.current);
     rafRef.current = 0;
     if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.onended    = null;
-      audioRef.current.ontimeupdate = null;
+      const prev = audioRef.current;
+      // Mute before pausing so any pre-buffered audio in the hardware pipeline
+      // is silenced immediately — prevents the old verse from bleeding into the
+      // new one while the browser's output buffer drains.
+      prev.muted = true;
+      prev.pause();
+      prev.onended      = null;
+      prev.ontimeupdate = null;
+      // For per-ayah (islamic.network) elements — not the persistent surah file
+      // — fully abort the network request so the browser cannot resume playback
+      // from a stale buffer later.
+      if (prev !== surahAudioRef.current) {
+        prev.removeAttribute("src");
+        prev.load();
+      }
     }
 
     const verseKey    = `${surahNum}:${ayahNumber}`;
