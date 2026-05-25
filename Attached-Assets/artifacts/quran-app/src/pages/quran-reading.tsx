@@ -1324,6 +1324,9 @@ export default function QuranReading() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sessionStartRef = useRef(Date.now());
+  // Direct ref to the overflow-y-auto scroll container so we can scroll it
+  // reliably (scrollIntoView can be overridden by Radix focus-return on popover close).
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Word-by-word highlighting
   const [surahTimingData, setSurahTimingData] = useState<SurahTimingData>(null);
@@ -2016,12 +2019,22 @@ export default function QuranReading() {
                           setAyahJumperOpen(false);
                           setAyahJumpInput("");
                           setSelectedAyah(num);
+                          // 300 ms lets the Radix popover finish closing + focus
+                          // return before we scroll, so it isn't overridden.
                           setTimeout(() => {
                             const el = viewMode === "reading"
-                              ? document.querySelector(`[data-rv-ayah="${num}"]`)
+                              ? (document.querySelector(`[data-rv-ayah="${num}"]`) as HTMLElement | null)
                               : document.getElementById(`ayah-${num}`);
-                            el?.scrollIntoView({ behavior: "smooth", block: "center" });
-                          }, 50);
+                            const container = scrollContainerRef.current;
+                            if (!el || !container) return;
+                            const elRect        = el.getBoundingClientRect();
+                            const containerRect = container.getBoundingClientRect();
+                            const scrollTarget  = container.scrollTop
+                              + (elRect.top - containerRect.top)
+                              - container.clientHeight / 2
+                              + el.clientHeight / 2;
+                            container.scrollTo({ top: Math.max(0, scrollTarget), behavior: "smooth" });
+                          }, 300);
                         }
                       }
                     }}
@@ -2039,10 +2052,18 @@ export default function QuranReading() {
                         setSelectedAyah(num);
                         setTimeout(() => {
                           const el = viewMode === "reading"
-                            ? document.querySelector(`[data-rv-ayah="${num}"]`)
+                            ? (document.querySelector(`[data-rv-ayah="${num}"]`) as HTMLElement | null)
                             : document.getElementById(`ayah-${num}`);
-                          el?.scrollIntoView({ behavior: "smooth", block: "center" });
-                        }, 50);
+                          const container = scrollContainerRef.current;
+                          if (!el || !container) return;
+                          const elRect        = el.getBoundingClientRect();
+                          const containerRect = container.getBoundingClientRect();
+                          const scrollTarget  = container.scrollTop
+                            + (elRect.top - containerRect.top)
+                            - container.clientHeight / 2
+                            + el.clientHeight / 2;
+                          container.scrollTo({ top: Math.max(0, scrollTarget), behavior: "smooth" });
+                        }, 300);
                       }
                     }}
                   >
@@ -2201,6 +2222,7 @@ export default function QuranReading() {
 
       {/* ── Ayah list ─────────────────────────────────────────── */}
       <div
+        ref={scrollContainerRef}
         className="flex-1 overflow-y-auto pb-44 md:pb-28"
         style={{ overflowX: "clip" }}
         data-tj-theme={tajweedEnabled ? tajweedTheme : undefined}
