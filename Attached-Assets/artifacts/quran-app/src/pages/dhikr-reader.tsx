@@ -129,7 +129,7 @@ function EntryCard({
         <p
           dir="rtl"
           lang="ar"
-          className={`font-arabic ${sz.arabic} ${sz.lineHeight} text-foreground text-right leading-loose`}
+          className={`font-arabic ${sz.arabic} ${sz.lineHeight} text-foreground leading-loose ${entry.centered ? "text-center" : "text-right"}`}
         >
           {entry.arabic}
         </p>

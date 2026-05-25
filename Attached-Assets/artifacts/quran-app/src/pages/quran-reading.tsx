@@ -980,6 +980,7 @@ interface ReadingViewPanelProps {
   surahTimingData: SurahTimingData;
   selectedAyah: number | null;
   setSelectedAyah: (n: number | null) => void;
+  onPlay: (n: number) => void;
   onRuleTap: (rule: TajweedRule) => void;
 }
 
@@ -987,7 +988,7 @@ const ReadingViewPanel = memo(function ReadingViewPanel({
   surah, surahNum, scriptInfo, arabicSizeClass,
   tajweedEnabled, tajweedData, tajweedTapExplain,
   activeAyah, activeWordIndex, surahTimingData,
-  selectedAyah, setSelectedAyah, onRuleTap,
+  selectedAyah, setSelectedAyah, onPlay, onRuleTap,
 }: ReadingViewPanelProps) {
   // Scroll active ayah into view during audio playback
   useEffect(() => {
@@ -1077,7 +1078,14 @@ const ReadingViewPanel = memo(function ReadingViewPanel({
             <span
               key={ayah.numberInSurah}
               data-rv-ayah={ayah.numberInSurah}
-              onClick={() => setSelectedAyah(isSelected ? null : ayah.numberInSurah)}
+              onClick={() => {
+                if (isSelected) {
+                  setSelectedAyah(null);
+                } else {
+                  setSelectedAyah(ayah.numberInSurah);
+                  onPlay(ayah.numberInSurah);
+                }
+              }}
               className={`cursor-pointer transition-colors ${
                 isActive ? "text-secondary" : isSelected ? "text-primary" : ""
               }`}
@@ -2449,6 +2457,7 @@ export default function QuranReading() {
             surahTimingData={surahTimingData}
             selectedAyah={selectedAyah}
             setSelectedAyah={setSelectedAyah}
+            onPlay={playAyah}
             onRuleTap={setActiveTjRule}
           />
         )}

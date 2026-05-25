@@ -18,6 +18,8 @@ export interface DhikrEntry {
   flagNote?: string;
   /** If true, always render as a counter card even in "pages" layout */
   useCard?: boolean;
+  /** If true, render the Arabic text centered instead of right-aligned */
+  centered?: boolean;
 }
 
 export interface DhikrSection {
@@ -258,6 +260,7 @@ const duaSubah: DhikrCollection = {
           transliteration: "Bismillāhir-raḥmānir-raḥīm",
           translation: "In the name of Allah, the Most Gracious, the Most Merciful.",
           count: 1,
+          centered: true,
         },
         {
           id: "des-p1-tasbih",
