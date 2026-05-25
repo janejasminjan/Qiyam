@@ -1732,14 +1732,21 @@ export default function QuranReading() {
 
     if (timing) {
       // ── RAF-based word highlight with RELATIVE timestamps ─────────────
-      // QuranCDN segments are absolute within the surah audio file, so we
-      // subtract timing.from to convert them to offsets from this verse start.
-      const fromMs = timing.from;
+      // QuranCDN segments are absolute within the surah audio file; subtract
+      // timing.from to convert to offsets from this verse start.
+      //
+      // Sync correction: the QuranCDN surah file has a built-in lead-in gap
+      // between verseTiming.from (our t=0) and when the first word actually
+      // begins. Islamic.network per-ayah files start the verse at t≈0 with no
+      // such lead-in, so we advance the effective playback position by the
+      // first-segment offset to compensate, keeping highlights in sync.
+      const fromMs    = timing.from;
+      const segs      = timing.segments;
+      const leadInMs  = segs.length > 0 ? segs[0][0] - fromMs : 0;
       const tick = () => {
         if (audioRef.current !== audio) return;
         if (!audio.paused) {
-          const relMs = audio.currentTime * 1000;
-          const segs  = timing.segments;
+          const relMs = audio.currentTime * 1000 + leadInMs;
           let newIdx: number | null = null;
           for (let i = 0; i < segs.length; i++) {
             if (relMs >= segs[i][0] - fromMs && relMs < segs[i][1] - fromMs) {
