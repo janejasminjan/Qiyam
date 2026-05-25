@@ -1742,11 +1742,19 @@ export default function QuranReading() {
       // first-segment offset to compensate, keeping highlights in sync.
       const fromMs    = timing.from;
       const segs      = timing.segments;
+      // leadInMs: gap between verseTiming.from and the first word's start in the
+      // QuranCDN file — the Islamic.network per-ayah file has no such lead-in, so
+      // we advance by this amount to align the word windows to t=0.
       const leadInMs  = segs.length > 0 ? segs[0][0] - fromMs : 0;
+      // BROWSER_LATENCY_MS: HTML5 Audio's currentTime is updated on the main
+      // thread and typically lags the hardware output by ~150–200 ms, causing
+      // highlights to fire after the word is already audible. Adding this advance
+      // keeps the highlight visually in sync with what the user hears.
+      const BROWSER_LATENCY_MS = 200;
       const tick = () => {
         if (audioRef.current !== audio) return;
         if (!audio.paused) {
-          const relMs = audio.currentTime * 1000 + leadInMs;
+          const relMs = audio.currentTime * 1000 + leadInMs + BROWSER_LATENCY_MS;
           let newIdx: number | null = null;
           for (let i = 0; i < segs.length; i++) {
             if (relMs >= segs[i][0] - fromMs && relMs < segs[i][1] - fromMs) {
@@ -1977,7 +1985,7 @@ export default function QuranReading() {
             )}
 
             {/* Go to ayah */}
-            {viewMode === "verse" && surah && (
+            {surah && (
             <Popover open={ayahJumperOpen} onOpenChange={v => { setAyahJumperOpen(v); if (!v) setAyahJumpInput(""); }}>
               <PopoverTrigger asChild>
                 <Button
@@ -2009,7 +2017,10 @@ export default function QuranReading() {
                           setAyahJumpInput("");
                           setSelectedAyah(num);
                           setTimeout(() => {
-                            document.getElementById(`ayah-${num}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                            const el = viewMode === "reading"
+                              ? document.querySelector(`[data-rv-ayah="${num}"]`)
+                              : document.getElementById(`ayah-${num}`);
+                            el?.scrollIntoView({ behavior: "smooth", block: "center" });
                           }, 50);
                         }
                       }
@@ -2027,7 +2038,10 @@ export default function QuranReading() {
                         setAyahJumpInput("");
                         setSelectedAyah(num);
                         setTimeout(() => {
-                          document.getElementById(`ayah-${num}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                          const el = viewMode === "reading"
+                            ? document.querySelector(`[data-rv-ayah="${num}"]`)
+                            : document.getElementById(`ayah-${num}`);
+                          el?.scrollIntoView({ behavior: "smooth", block: "center" });
                         }, 50);
                       }
                     }}
