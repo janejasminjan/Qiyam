@@ -1,0 +1,49 @@
+
+> @workspace/api-server@0.0.0 dev /home/runner/workspace/Attached-Assets/artifacts/api-server
+> export NODE_ENV=development && pnpm run build && pnpm run start
+
+
+> @workspace/api-server@0.0.0 build /home/runner/workspace/Attached-Assets/artifacts/api-server
+> node ./build.mjs
+
+
+  [37mdist/[0m[1mindex.mjs[0m                       [33m2.3mb ⚠️[0m
+  [37mdist/[0m[1mpino-worker.mjs[0m               [36m153.4kb[0m
+  [37mdist/[0m[1mpino-file.mjs[0m                 [36m142.1kb[0m
+  [37mdist/[0m[1mpino-pretty.mjs[0m               [36m114.6kb[0m
+  [37mdist/[0m[1mthread-stream-worker.mjs[0m        [36m7.3kb[0m
+  [37mdist/[0m[1mindex.mjs.map[0m                   [36m3.8mb[0m
+  [37mdist/[0m[1mpino-worker.mjs.map[0m           [36m256.9kb[0m
+  [37mdist/[0m[1mpino-file.mjs.map[0m             [36m229.1kb[0m
+  [37mdist/[0m[1mpino-pretty.mjs.map[0m           [36m203.9kb[0m
+  [37mdist/[0m[1mthread-stream-worker.mjs.map[0m   [36m12.0kb[0m
+
+⚡ [32mDone in 973ms[0m
+
+> @workspace/api-server@0.0.0 start /home/runner/workspace/Attached-Assets/artifacts/api-server
+> node --enable-source-maps ./dist/index.mjs
+
+/home/runner/workspace/Attached-Assets/node_modules/.pnpm/path-to-regexp@8.3.0/node_modules/path-to-regexp/src/index.ts:225
+      throw new PathError(`Missing parameter name at index ${index}`, str);
+            ^
+
+
+PathError [TypeError]: Missing parameter name at index 1: *; visit https://git.new/pathToRegexpError for info
+    at name (/home/runner/workspace/Attached-Assets/node_modules/[4m.pnpm[24m/path-to-regexp@8.3.0/node_modules/[4mpath-to-regexp[24m/src/index.ts:225:13)
+    at parse (/home/runner/workspace/Attached-Assets/node_modules/[4m.pnpm[24m/path-to-regexp@8.3.0/node_modules/[4mpath-to-regexp[24m/src/index.ts:242:62)
+    at pathToRegexp (/home/runner/workspace/Attached-Assets/node_modules/[4m.pnpm[24m/path-to-regexp@8.3.0/node_modules/[4mpath-to-regexp[24m/src/index.ts:480:54)
+    at Object.match (/home/runner/workspace/Attached-Assets/node_modules/[4m.pnpm[24m/path-to-regexp@8.3.0/node_modules/[4mpath-to-regexp[24m/src/index.ts:438:28)
+    at matcher (/home/runner/workspace/Attached-Assets/node_modules/[4m.pnpm[24m/router@2.2.0/node_modules/[4mrouter[24m/lib/layer.js:86:23)
+    at new Layer (/home/runner/workspace/Attached-Assets/node_modules/[4m.pnpm[24m/router@2.2.0/node_modules/[4mrouter[24m/lib/layer.js:93:62)
+    at Function.route (/home/runner/workspace/Attached-Assets/node_modules/[4m.pnpm[24m/router@2.2.0/node_modules/[4mrouter[24m/index.js:428:17)
+    at Function.route (/home/runner/workspace/Attached-Assets/node_modules/[4m.pnpm[24m/express@5.2.1/node_modules/[4mexpress[24m/lib/application.js:257:22)
+    at Function.app2.<computed> (/home/runner/workspace/Attached-Assets/node_modules/[4m.pnpm[24m/express@5.2.1/node_modules/[4mexpress[24m/lib/application.js:478:22)
+    at <anonymous> [90m(/home/runner/workspace/Attached-Assets/artifacts/api-server/[39msrc/app.ts:55:7[90m)[39m {
+  originalPath: [32m'*'[39m
+}
+
+Node.js v20.20.0
+[41m[30m ELIFECYCLE [39m[49m [31mCommand failed with exit code 1.[39m
+/home/runner/workspace/Attached-Assets/artifacts/api-server:
+[41m[30m ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL [39m[49m [31m@workspace/api-server@0.0.0 dev: `export NODE_ENV=development && pnpm run build && pnpm run start`[39m
+[31mExit status 1[39m
