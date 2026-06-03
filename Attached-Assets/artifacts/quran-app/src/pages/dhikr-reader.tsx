@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, Languages, ZoomIn, ZoomOut, AlertTriangle, Check, BookOpen, Search, X, ExternalLink, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, Languages, ZoomIn, ZoomOut, AlertTriangle, Check, BookOpen, Search, X, ExternalLink, Download, FileText, FileImage } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PdfViewer } from "@/components/pdf-viewer";
-import { DHIKR_COLLECTIONS, getCollection, type DhikrEntry, type DhikrSection } from "@/lib/dhikr-data";
+import { AuradTextReader } from "@/components/aurad-text-reader";
+import { DHIKR_COLLECTIONS, getCollection, type DhikrEntry, type DhikrSection, type DhikrCollection } from "@/lib/dhikr-data";
+import { useSwipePage } from "@/hooks/use-swipe-page";
 
 /* ── Font size steps ──────────────────────────────────────────── */
 const FONT_SIZES = [
@@ -387,6 +389,107 @@ function PageSection({ section, fontSizeIdx, showTranslit, showTranslation, coun
 }
 
 /* ══════════════════════════════════════════════════════════════ */
+/*  PDF + optional Text viewer (used for Aurad Fathiya etc.)     */
+/* ══════════════════════════════════════════════════════════════ */
+function PdfTextViewer({ collection }: { collection: DhikrCollection }) {
+  const defaultMode = collection.hasTextMode ? "text" : "pdf";
+  const [formatMode, setFormatMode] = useState<"text" | "pdf">(defaultMode);
+
+  return (
+    <div className="flex flex-col h-screen overflow-hidden">
+      {/* Sticky header */}
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border flex-shrink-0">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <Button asChild variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 -ml-1">
+            <Link href="/dhikr">
+              <ChevronLeft className="h-5 w-5" />
+            </Link>
+          </Button>
+          <div className="flex-1 min-w-0">
+            <h1 className="font-semibold text-foreground text-sm truncate leading-tight">
+              {collection.title}
+            </h1>
+            <p className="text-xs text-muted-foreground font-arabic truncate">
+              {collection.arabicTitle}
+            </p>
+          </div>
+          {/* Format toggle — only when both modes available */}
+          {collection.hasTextMode && (
+            <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5 flex-shrink-0">
+              <button
+                onClick={() => setFormatMode("text")}
+                className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all ${
+                  formatMode === "text"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                <span>Text</span>
+              </button>
+              <button
+                onClick={() => setFormatMode("pdf")}
+                className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all ${
+                  formatMode === "pdf"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <FileImage className="h-3.5 w-3.5" />
+                <span>PDF</span>
+              </button>
+            </div>
+          )}
+        </div>
+        {/* Subtitle strip — only shown in PDF mode to save vertical space */}
+        {formatMode === "pdf" && (
+          <div className="px-4 pb-2.5 flex items-center gap-2">
+            <span className="text-lg">{collection.icon}</span>
+            <div>
+              <p className="text-xs font-medium text-primary">{collection.subtitle}</p>
+              <p className="text-xs text-muted-foreground line-clamp-1">{collection.description}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Content area */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <AnimatePresence mode="wait" initial={false}>
+          {formatMode === "pdf" ? (
+            <motion.div
+              key="pdf"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="h-full"
+            >
+              <PdfViewer
+                src={collection.pdfPath!}
+                title={collection.title}
+                downloadFilename="Aurad-e-Fathiya.pdf"
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="text"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="h-full"
+            >
+              <AuradTextReader />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════ */
 /*  Reader page                                                   */
 /* ══════════════════════════════════════════════════════════════ */
 export default function DhikrReader() {
@@ -406,6 +509,8 @@ export default function DhikrReader() {
     return localStorage.getItem(TRANSLATE_KEY) !== "false";
   });
   const [activeSection, setActiveSection] = useState<string>("");
+  const [activeSectionIdx, setActiveSectionIdx] = useState(0);
+  const [swipeDir, setSwipeDir] = useState<1 | -1>(1);
   const [searchQuery, setSearchQuery]     = useState("");
   const [searchOpen, setSearchOpen]       = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -457,6 +562,26 @@ export default function DhikrReader() {
     document.getElementById(`section-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  /* Pages-layout section navigation */
+  const goNextSection = useCallback(() => {
+    if (!collection) return;
+    if (activeSectionIdx < collection.sections.length - 1) {
+      setSwipeDir(1);
+      setActiveSectionIdx(i => i + 1);
+    }
+  }, [activeSectionIdx, collection]);
+  const goPrevSection = useCallback(() => {
+    if (activeSectionIdx > 0) {
+      setSwipeDir(-1);
+      setActiveSectionIdx(i => i - 1);
+    }
+  }, [activeSectionIdx]);
+  const pagesSwipe = useSwipePage({
+    onNext: goNextSection,
+    onPrev: goPrevSection,
+    enabled: collection?.layout === "pages" && !isSearching,
+  });
+
   /* Intersection observer to track active section while scrolling */
   const observerRef = useRef<IntersectionObserver | null>(null);
   useEffect(() => {
@@ -489,47 +614,9 @@ export default function DhikrReader() {
     );
   }
 
-  /* ── PDF viewer mode ─────────────────────────────────────────── */
+  /* ── PDF / Text viewer mode ─────────────────────────────────── */
   if (collection.pdfPath) {
-    return (
-      <div className="flex flex-col h-screen overflow-hidden">
-        {/* Sticky header — same style as normal reader */}
-        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border flex-shrink-0">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <Button asChild variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 -ml-1">
-              <Link href="/dhikr">
-                <ChevronLeft className="h-5 w-5" />
-              </Link>
-            </Button>
-            <div className="flex-1 min-w-0">
-              <h1 className="font-semibold text-foreground text-sm truncate leading-tight">
-                {collection.title}
-              </h1>
-              <p className="text-xs text-muted-foreground font-arabic truncate">
-                {collection.arabicTitle}
-              </p>
-            </div>
-          </div>
-          {/* Subtitle strip */}
-          <div className="px-4 pb-2.5 flex items-center gap-2">
-            <span className="text-lg">{collection.icon}</span>
-            <div>
-              <p className="text-xs font-medium text-primary">{collection.subtitle}</p>
-              <p className="text-xs text-muted-foreground line-clamp-1">{collection.description}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Canvas PDF viewer fills remaining height */}
-        <div className="flex-1 min-h-0">
-          <PdfViewer
-            src={collection.pdfPath}
-            title={collection.title}
-            downloadFilename="Aurad-e-Fathiya.pdf"
-          />
-        </div>
-      </div>
-    );
+    return <PdfTextViewer collection={collection} />;
   }
 
   /* Overall session progress */
@@ -669,12 +756,19 @@ export default function DhikrReader() {
         {/* Section tabs — hide during search */}
         {!searchOpen && (
           <div className="flex gap-1.5 px-4 pb-3 overflow-x-auto scrollbar-none">
-            {collection.sections.map((sec) => (
+            {collection.sections.map((sec, secIdx) => (
               <button
                 key={sec.id}
-                onClick={() => scrollToSection(sec.id)}
+                onClick={() => {
+                  if (collection.layout === "pages") {
+                    setSwipeDir(secIdx > activeSectionIdx ? 1 : -1);
+                    setActiveSectionIdx(secIdx);
+                  } else {
+                    scrollToSection(sec.id);
+                  }
+                }}
                 className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all ${
-                  activeSection === sec.id
+                  (collection.layout === "pages" ? activeSectionIdx === secIdx : activeSection === sec.id)
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground hover:bg-muted/70"
                 }`}
@@ -739,8 +833,66 @@ export default function DhikrReader() {
                 </motion.div>
               ))}
             </motion.div>
+          ) : collection.layout === "pages" ? (
+            /* ── Pages section pager ────────────────────────── */
+            <motion.div
+              key="pages-view"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="space-y-4"
+              {...pagesSwipe}
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={activeSectionIdx}
+                  initial={{ opacity: 0, x: swipeDir * 32 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: swipeDir * -32 }}
+                  transition={{ duration: 0.22, ease: "easeInOut" }}
+                >
+                  <PageSection
+                    section={collection.sections[activeSectionIdx]}
+                    fontSizeIdx={fontSizeIdx}
+                    showTranslit={showTranslit}
+                    showTranslation={showTranslation}
+                    counters={counters}
+                    onIncrement={increment}
+                    onReset={reset}
+                  />
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Section prev / next nav */}
+              <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={activeSectionIdx === 0}
+                  onClick={goPrevSection}
+                  className="gap-1.5 text-xs"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  Prev
+                </Button>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {activeSectionIdx + 1} / {collection.sections.length}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={activeSectionIdx === collection.sections.length - 1}
+                  onClick={goNextSection}
+                  className="gap-1.5 text-xs"
+                >
+                  Next
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </motion.div>
           ) : (
-            /* ── Normal section view ────────────────────────── */
+            /* ── Cards section view ──────────────────────────── */
             <motion.div
               key="section-view"
               initial={{ opacity: 0 }}
@@ -755,31 +907,18 @@ export default function DhikrReader() {
               </p>
 
               {/* Sections */}
-              {collection.sections.map((section) =>
-                collection.layout === "pages" ? (
-                  <PageSection
-                    key={section.id}
-                    section={section}
-                    fontSizeIdx={fontSizeIdx}
-                    showTranslit={showTranslit}
-                    showTranslation={showTranslation}
-                    counters={counters}
-                    onIncrement={increment}
-                    onReset={reset}
-                  />
-                ) : (
-                  <SectionBlock
-                    key={section.id}
-                    section={section}
-                    fontSizeIdx={fontSizeIdx}
-                    showTranslit={showTranslit}
-                    showTranslation={showTranslation}
-                    counters={counters}
-                    onIncrement={increment}
-                    onReset={reset}
-                  />
-                )
-              )}
+              {collection.sections.map((section) => (
+                <SectionBlock
+                  key={section.id}
+                  section={section}
+                  fontSizeIdx={fontSizeIdx}
+                  showTranslit={showTranslit}
+                  showTranslation={showTranslation}
+                  counters={counters}
+                  onIncrement={increment}
+                  onReset={reset}
+                />
+              ))}
 
               {/* Closing note */}
               <div className="text-center py-6 space-y-1">

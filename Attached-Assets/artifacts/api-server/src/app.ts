@@ -37,6 +37,10 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Fast health check — before auth/guest middleware so Replit's
+// deployment probe returns 200 immediately without touching the database.
+app.get("/healthz", (_req, res) => res.json({ status: "ok" }));
+
 // Auth middleware: loads OIDC session into req.user if present
 app.use(authMiddleware);
 // Guest middleware: resolves/creates a guest user and sets req.resolvedUserId
@@ -52,7 +56,7 @@ const staticDir = path.resolve(__dirname, "..", "..", "quran-app", "dist", "publ
 if (existsSync(staticDir)) {
   app.use(express.static(staticDir));
   // SPA fallback — let React Router handle all non-API routes
-  app.get("*", (_req, res) => {
+  app.get("*splat", (_req, res) => {
     res.sendFile(path.join(staticDir, "index.html"));
   });
 }

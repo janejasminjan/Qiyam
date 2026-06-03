@@ -1,0 +1,283 @@
+I have an existing app, and I want you to implement a comprehensive smart Islamic dashboard and prayer timing system.
+This is an existing app, so first inspect the current codebase and identify:
+how the dashboard is currently structured,
+how settings are stored,
+whether location access already exists,
+whether notifications already exist,
+how user preferences are stored,
+and the safest way to add prayer-time logic, smart suggestions, location handling, and notifications without breaking existing features.
+Do not rebuild the app from scratch.
+Do not redesign unrelated areas.
+Do not break Quran, Hadith, Dhikr & Dua, reader screens, bookmarks, or current settings.
+Make focused, production-quality edits only. Replit prompting guidance works best when changes to existing apps are explicit, staged, and scoped.
+Main objective
+Implement all of the following comprehensively:
+Smart dashboard suggestions based on day and time
+Prayer times based on user location
+School-of-thought / madhab-based prayer calculation settings
+Prayer notifications
+Additional Islamic times beyond the 5 daily prayers
+Display current prayer and other time windows on the dashboard
+Allow users to turn notifications on/off in settings
+Part 1: Smart dashboard suggestions
+On the dashboard, show smart suggestions based on the day and current time.
+Examples:
+If it is Friday, show a suggestion to read Surah Al-Kahf.
+In the evening after Maghrib, show a suggestion to read Surah Al-Mulk.
+Around morning, show relevant Dhikr / Dua suggestions such as morning adhkar if those sections exist.
+Around night, show relevant night worship suggestions.
+Before Fajr, show Tahajjud / Suhoor related suggestions where relevant.
+Around Ramadan-related times like Suhoor/Iftar, surface appropriate suggestions if the app supports relevant content.
+The suggestions should not be random. They should be context-aware based on:
+current local date,
+current local time,
+current prayer window,
+weekday,
+and available app content.
+Suggestion behavior
+Show suggestions in a clean dashboard card or section.
+Update suggestions dynamically based on time/day.
+Use content already present in the app where possible.
+Tapping a suggestion should take the user directly to the relevant content.
+Suggestions should feel helpful, not cluttered.
+Part 2: Prayer times based on location
+Implement prayer time calculation based on the user’s location.
+Location requirements
+Ask for location permission cleanly.
+Support automatic location detection using coordinates if possible.
+If permission is denied, allow manual location entry or city selection as fallback.
+Show current location on the dashboard.
+Persist the chosen location or location mode.
+Prayer-time APIs commonly support calculation by coordinates, city, address, or timezone, so the app should be structured around actual location-aware timing rather than hardcoded schedules.
+Part 3: School of thought / madhab support
+Allow the user to select school of thought / madhab and use it in prayer time calculation.
+The selection UI should include at least:
+Hanafi
+Shafi
+Maliki
+Hanbali
+Jafari
+Madhab logic
+Implement this carefully:
+For Asr, Hanafi differs from Shafi/Maliki/Hanbali in the shadow factor used for start time. Public prayer-time references specifically note that Shafi, Maliki, and Hanbali share one Asr rule, while Hanafi uses a later Asr rule.
+For Jafari, use a method appropriate for Jafari calculation where supported by the selected API/library. Public prayer-time libraries commonly include Jafari as a separate calculation method with distinct Fajr/Isha parameters.
+User preference
+Store the selected madhab/settings persistently and use it for:
+dashboard times,
+prayer notifications,
+displayed current prayer,
+extra devotional time windows.
+Part 4: Calculation methods
+Do not hardcode a single universal prayer timing rule.
+Support a proper prayer-time engine using:
+a reliable API/library,
+calculation method selection where appropriate,
+madhab-aware Asr handling,
+and tunable settings if needed.
+A prayer-time calculation method typically consists of Fajr and Isha angle settings plus related parameters, while madhab affects Asr timing and some systems support additional tuning. Public APIs such as AlAdhan explicitly expose methods, custom method settings, and tuning parameters.
+If useful, separate:
+calculation method
+madhab
+location
+timezone
+manual tuning offsets
+Part 5: Mandatory prayer times
+Display and support notifications for the 5 mandatory daily prayers:
+Fajr
+Dhuhr
+Asr
+Maghrib
+Isha
+For each prayer:
+show time,
+identify current/next prayer,
+optionally show countdown to next prayer,
+and support notification scheduling.
+Part 6: Additional Islamic times to calculate and show
+Apart from the 5 mandatory prayers, also calculate and show all of these:
+Zawal Time — Start and End
+Ishraq Prayer Time — Start and End
+Tahajud Prayer Time — Start and End
+Chasht / Duha Prayer Time — Start and End
+Iftar Time
+Suhoor / Suhur Time
+These should all be based on:
+location,
+selected madhab/method where relevant,
+and local date/time.
+Important implementation note
+Use a clear computation model:
+Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha come from the prayer-time engine/API.
+Derive related windows such as Ishraq, Chasht/Duha, Tahajjud, Suhoor, Iftar, and Zawal using explicit, documented rules in code.
+Document the formulas/definitions used.
+Make these rules configurable if needed later.
+Public prayer-time APIs commonly expose the core daily timings and related fields such as sunrise, sunset, imsak, and midnight, which provide the foundation for deriving extra devotional windows.
+Suggested definitions
+Please implement with a clean derivation strategy, for example:
+Iftar = Maghrib time
+Suhoor end = Fajr or Imsak depending on the chosen rule/configuration
+Ishraq start = some minutes after sunrise, configurable
+Chasht/Duha = after Ishraq until before Zawal, using a clear app-defined or scholarly-configurable window
+Zawal = around solar noon / before Dhuhr, with explicit start/end rule
+Tahajjud = last portion of the night before Fajr, with documented formula
+Do not hide these formulas in scattered UI code. Put them in a reusable calculation layer.
+Part 7: Dashboard display
+Show the following on the dashboard based on the user’s location and current time:
+current location
+current Islamic time context
+current prayer
+next prayer
+countdown to next prayer
+today’s 5 prayer times
+Zawal time
+Ishraq time
+Chasht time
+Suhoor time
+Iftar time
+Tahajud time
+Dashboard behavior
+Highlight the current prayer or current relevant time window.
+If the current time falls within a special window, surface it.
+Keep the dashboard readable and not overloaded.
+Use grouped cards/sections if needed.
+Match the existing app UI and theme.
+Smart contextual examples
+Friday morning/day: Suggest Surah Al-Kahf.
+After Maghrib / evening: Suggest Surah Al-Mulk.
+Before Fajr: Suggest Tahajjud / Suhoor guidance.
+Morning after sunrise: Show Ishraq/Chasht timing card.
+Near prohibited/no-prayer window around Zawal: Show that clearly and respectfully.
+Part 8: Notifications
+Implement prayer notifications based on:
+location,
+selected madhab,
+chosen calculation method,
+and current day’s prayer times.
+Notification requirements
+Notify for Fajr, Dhuhr, Asr, Maghrib, Isha.
+Use local notification scheduling.
+Reschedule when:
+date changes,
+location changes,
+madhab changes,
+calculation method changes,
+timezone changes,
+notification settings change.
+Notification settings
+In settings, allow the user to:
+turn prayer notifications on/off globally,
+optionally toggle each prayer individually,
+choose notification lead time if practical, e.g. at time / 5 min before / 10 min before,
+choose sound or silent behavior if supported by the platform.
+User control
+At minimum, implement:
+master prayer notification toggle,
+per-prayer toggles if possible,
+and clear notification permission handling.
+Safety
+If notification permissions are denied:
+show a clear non-blocking message,
+keep prayer times visible,
+allow the user to retry permission later.
+Part 9: Settings screen additions
+Add a proper prayer settings section including:
+location mode: automatic / manual
+current location / selected city
+madhab selection:
+Hanafi
+Shafi
+Maliki
+Hanbali
+Jafari
+prayer calculation method
+prayer notification toggle
+optional per-prayer notification toggles
+optional offsets/tuning if feasible
+optional Suhoor rule choice: Fajr or Imsak if supported
+Part 10: Data model suggestion
+Please structure this cleanly, for example:
+ts
+type PrayerSettings = {
+  locationMode: "auto" | "manual";
+  latitude?: number;
+  longitude?: number;
+  cityName?: string;
+  timezone?: string;
+  madhab: "hanafi" | "shafi" | "maliki" | "hanbali" | "jafari";
+  calculationMethod: string;
+  notificationsEnabled: boolean;
+  notificationPerPrayer?: Record<string, boolean>;
+  notificationLeadMinutes?: number;
+};
+
+type DailyPrayerTimes = {
+  date: string;
+  fajr: string;
+  sunrise: string;
+  dhuhr: string;
+  asr: string;
+  maghrib: string;
+  isha: string;
+  zawalStart?: string;
+  zawalEnd?: string;
+  ishraqStart?: string;
+  ishraqEnd?: string;
+  chashtStart?: string;
+  chashtEnd?: string;
+  tahajjudStart?: string;
+  tahajjudEnd?: string;
+  iftarTime?: string;
+  suhoorTime?: string;
+  currentPrayer?: string;
+  nextPrayer?: string;
+};
+Part 11: UX requirements
+Keep the implementation visually consistent with the rest of the app:
+same theme system,
+same typography,
+same card styles,
+same spacing,
+same header patterns,
+same settings UI language.
+Do not make the prayer dashboard look like a separate product.
+Part 12: Error states and fallbacks
+Please handle:
+location denied
+location unavailable
+invalid/manual city selection
+API failure
+timezone mismatch
+notification permission denied
+stale cached timings
+midnight/day rollover
+The app should remain usable even if notifications or auto-location fail.
+Part 13: Implementation order
+Please work in this order:
+Inspect the existing app architecture.
+Identify dashboard, settings, location, and notification infrastructure.
+Choose the best prayer-time engine/API with madhab support.
+Add prayer settings and madhab selection.
+Implement location-based prayer time fetching/calculation.
+Derive extra times: Zawal, Ishraq, Chasht, Tahajjud, Suhoor, Iftar.
+Add dashboard cards for current prayer and all key times.
+Add smart contextual dashboard suggestions.
+Add local prayer notifications.
+Add notification settings and permission handling.
+Test day rollover, location changes, madhab changes, and notification rescheduling.
+Safety rules
+Do not refactor unrelated app modules.
+Do not break current Quran/Hadith/Dhikr features.
+Do not hardcode one global prayer schedule.
+Do not put calculation rules directly inside UI components.
+Keep logic reusable and well documented.
+Final output required
+When done, show me:
+which files were changed,
+which prayer-time engine/API was used,
+how madhab selection affects timing,
+how extra times were derived,
+how notifications are scheduled,
+how settings are stored,
+and what fallback behavior exists when permissions or APIs fail.
+
+Do not implement hidden assumptions for Islamic time windows. Centralize all formulas and document how Zawal, Ishraq, Chasht, Tahajjud, Suhoor, and Iftar are calculated from the core daily prayer times so the logic is maintainable and reviewable

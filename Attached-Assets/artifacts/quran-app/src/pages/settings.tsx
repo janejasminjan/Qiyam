@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Loader2, Settings as SettingsIcon, Check, RotateCcw } from "lucide-react";
+import { PrayerSettingsSection } from "@/components/prayer-settings-section";
 import { Sun, Moon, Flame, Layers, Smartphone, FileText } from "lucide-react";
 import { useTranslationPreference } from "@/hooks/use-translation-preference";
 import { useQuranScript, QURAN_SCRIPTS } from "@/hooks/use-quran-script";
@@ -676,6 +677,9 @@ export default function Settings() {
             })()}
           </CardContent>
         </Card>
+
+      {/* ── Prayer Times ─────────────────────────────────────── */}
+      <PrayerSettingsSection />
 
       {/* ── Attribution ───────────────────────────────────────── */}
       <div className="pt-2 pb-4 flex flex-col items-center gap-1.5">

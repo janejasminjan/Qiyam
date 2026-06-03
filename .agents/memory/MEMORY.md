@@ -1,0 +1,3 @@
+- [Expo tunnel fix](expo-tunnel-fix.md) — Replit's expo.pike.replit.dev proxy returns 404 for native Expo requests; use --tunnel to bypass it.
+- [Mobile-Web Parity](mobile-web-parity.md) — what was brought to parity in the Expo mobile app vs the quran-app web reference.
+- [Neon DB resilience patterns](neon-db-resilience.md) — multi-part fix for Neon auto-suspend crashes; critical for production deploys.

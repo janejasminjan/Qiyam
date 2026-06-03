@@ -1,0 +1,465 @@
+I have an existing app called Qiyam. Right now, the Android and iOS mobile app UI does not look like Qiyam Mobile (Mobile) and Quran Learning App (Website).
+
+I want you to make the mobile app match those references exactly in appearance, structure, behavior, functionality, resources, and UI quality as much as technically possible.
+
+Very important requirement
+The target is maximum parity with:
+
+Qiyam Mobile (Mobile)
+
+Quran Learning App (Website)
+
+I want the mobile app to feel like the same product system, not a loose interpretation.
+
+That means:
+
+same visual identity,
+
+same layout logic,
+
+same sections,
+
+same content structure,
+
+same styling language,
+
+same themes,
+
+same spacing,
+
+same typography,
+
+same hierarchy,
+
+same interactions,
+
+same component patterns,
+
+same resources where applicable,
+
+and same functionality wherever it exists in the references.
+
+Do not redesign based on your own taste.
+Do not improvise a new UI style.
+Do not create an “inspired by” version.
+I want strict visual and functional alignment.
+
+Replit supports building from detailed prompts and reference material, and its design-to-app workflow specifically emphasizes close matching to provided design vision rather than broad interpretation.
+
+First step: audit before changing anything
+Before implementing anything:
+
+Inspect the existing Qiyam app codebase.
+
+Identify the current mobile architecture and screen structure.
+
+Audit the current UI against the target references:
+
+Qiyam Mobile (Mobile)
+
+Quran Learning App (Website)
+
+Identify all differences in:
+
+navigation
+
+layout
+
+headers
+
+bottom navigation / tabs / drawers
+
+typography
+
+colors
+
+spacing
+
+cards
+
+reader screens
+
+buttons
+
+settings
+
+icons
+
+section structure
+
+animations / transitions
+
+feature parity
+
+Produce a short implementation plan before making major changes.
+
+Important implementation rule
+Do not rebuild the app from scratch unless absolutely necessary.
+Do not break current working features.
+Do not remove content.
+Do not refactor unrelated logic unnecessarily.
+Do not change backend/data structures unless needed for parity.
+
+Make the smallest safe set of changes necessary to bring the mobile app into parity with the reference products.
+
+Core objective
+Bring the mobile app to 100% alignment target in these areas:
+
+1. Visual parity
+The mobile app should visually match the reference products as closely as possible:
+
+screen layouts
+
+section order
+
+spacing rhythm
+
+visual hierarchy
+
+typography choices
+
+font weights
+
+color palette
+
+background treatment
+
+cards and containers
+
+buttons
+
+badges
+
+tabs
+
+bottom sheets
+
+modals
+
+list rows
+
+empty states
+
+search UI
+
+reader UI
+
+settings UI
+
+2. Functional parity
+The mobile app should include the same major features and user flows present in the reference products, where relevant to mobile:
+
+same sections and sub-sections
+
+same navigation logic
+
+same reader modes
+
+same search behavior
+
+same progress behavior
+
+same access patterns
+
+same discoverability
+
+same interaction quality
+
+3. Resource parity
+Use the same resources or equivalent structured resources where appropriate:
+
+icons
+
+illustrations
+
+content assets
+
+section imagery
+
+typography system
+
+color tokens
+
+reusable components
+
+section metadata
+
+content organization
+
+Navigation parity
+Make the app navigation match the reference products as closely as possible.
+
+Check and align:
+
+app shell
+
+top-level section access
+
+back navigation
+
+nested navigation
+
+section landing pages
+
+reader/detail screens
+
+tabs vs stacks vs drawers
+
+active states
+
+persistent navigation patterns
+
+If the references use a specific structure for Quran, Hadith, Dhikr & Dua, settings, search, bookmarks, profile, or learning sections, mirror that structure in the mobile app as closely as is practical.
+
+Design system parity
+Create or align a proper shared design system so the mobile app visually matches the references.
+
+Match:
+
+color palette
+
+typography scale
+
+font families
+
+border radius
+
+shadows/elevation
+
+spacing scale
+
+icon size patterns
+
+input styling
+
+button variants
+
+card styles
+
+divider styles
+
+sheet/modal styles
+
+dark mode behavior
+
+light mode behavior
+
+Do not allow screen-by-screen inconsistency.
+
+Section-by-section parity
+Audit and align every major app section, including but not limited to:
+
+Home
+
+Quran
+
+Hadith
+
+Dhikr & Dua
+
+Aurad Fathiya
+
+Dua-e-Subah
+
+Reader screens
+
+Search
+
+Bookmarks / Favorites
+
+Settings
+
+Profile / Auth if present
+
+For each section:
+
+make structure match references,
+
+make UI match references,
+
+make functionality match references,
+
+make transitions and interactions match references.
+
+Reader parity
+Reader experiences are especially important.
+
+For reader-like screens such as Quran, Aurad Fathiya, and similar content:
+
+match typography and reading layout,
+
+match header/footer behavior,
+
+match page or verse controls,
+
+match progress displays,
+
+match theme behavior,
+
+match swipe/pagination behavior if the references support it,
+
+match translation placement and visual treatment,
+
+match overall reading feel.
+
+Theme parity
+Ensure the mobile app theme matches the references:
+
+same dark/light palette logic,
+
+same contrast behavior,
+
+same accent usage,
+
+same background surfaces,
+
+same highlight colors,
+
+same component states,
+
+same selected/active styling.
+
+Mobile-specific adaptation rule
+Even though one reference is a website, I still want the mobile app to look and feel like the mobile expression of the same exact system.
+
+That means:
+
+adapt responsibly to mobile screen size,
+
+but do not change the visual language,
+
+do not simplify too much,
+
+do not replace the UI with a generic mobile style,
+
+do not invent new interaction patterns unless absolutely required by platform constraints.
+
+Technical execution requirements
+Please do this carefully:
+
+Inspect the current app UI architecture.
+
+Identify shared components and theme files.
+
+Identify which components/screens differ most from the references.
+
+Introduce or refine shared design tokens if needed.
+
+Replace inconsistent local styles with centralized reusable patterns.
+
+Update section screens one by one.
+
+Validate visual parity across major breakpoints/device sizes.
+
+Ensure iOS and Android both feel consistent.
+
+Strong anti-drift rule
+Do not let the agent “fill in the blanks” creatively.
+
+If something is unclear:
+
+inspect the current code,
+
+inspect the provided references if available in workspace or assets,
+
+reuse existing assets/components,
+
+and keep changes conservative and reference-driven.
+
+I do not want a fresh redesign.
+I want faithful implementation.
+
+If screenshots, links, or design files are available
+If screenshots, assets, or code from:
+
+Qiyam Mobile (Mobile)
+
+Quran Learning App (Website)
+
+are available in the project or can be referenced, use them as the source of truth for:
+
+spacing
+
+layout
+
+components
+
+typography
+
+themes
+
+interactions
+
+If not all references are available in code form, still use the existing app plus any available screenshots/assets as the parity target.
+
+Replit’s visual workflows explicitly support starting from screenshots or reference visuals to better align the generated app with the intended UI.
+
+QA and verification requirements
+After implementation, verify parity screen by screen.
+
+Please compare:
+
+current mobile app vs target reference
+
+screen layout
+
+component appearance
+
+font sizing
+
+spacing
+
+colors
+
+interactions
+
+navigation
+
+content structure
+
+If possible, create a small parity checklist for each major screen.
+
+Must verify:
+Home
+
+Quran
+
+Hadith
+
+Dhikr & Dua
+
+Aurad Fathiya
+
+Reader screens
+
+Settings
+
+Search
+
+Navigation shell
+
+Safety rules
+Do not remove existing working features.
+
+Do not change data models unless necessary.
+
+Do not introduce unrelated styling changes.
+
+Do not make assumptions when parity details can be inferred from existing assets or structure.
+
+Ask for clarification only if a blocker prevents faithful matching.
+
+Final output required
+When done, show me:
+
+which files were changed,
+
+what design system changes were made,
+
+which screens were updated,
+
+which features were brought into parity,
+
+what differences still remain if any,
+
+and why any remaining differences were technically unavoidable.

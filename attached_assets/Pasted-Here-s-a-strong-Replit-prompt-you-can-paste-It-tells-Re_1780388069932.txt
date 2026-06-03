@@ -1,0 +1,344 @@
+Here’s a strong Replit prompt you can paste. It tells Replit to modify your existing app, use the attached DOCX as the text source, preserve the already-implemented PDF mode, and add a proper text mode with page-wise rendering, Urdu/English translation selection, and full UI consistency. Replit prompting guidance emphasizes being specific about the existing screen, requested change, and scope, and DOCX/RTL extraction needs explicit handling to preserve Arabic/Urdu order cleanly.
+
+Replit prompt
+I already have an existing app with a Dhikr & Dua > Aurad Fathiya section.
+
+Right now, Aurad Fathiya is already implemented in PDF format. I want you to extend this section so the user can read Aurad Fathiya in two formats:
+
+PDF format — keep the existing implementation working.
+
+Text format — implement a new page-wise text reader using the attached file Aurad-Fathiya.docx as the source. The DOCX is attached in the workspace and should be used as the base content source for the new text mode.
+
+Do not rebuild the app from scratch.
+Do not break the existing PDF reader.
+Do not redesign unrelated app sections.
+Make focused, production-quality edits only. Replit works best when changes to an existing project are tightly scoped and clearly described.
+
+Main requirement
+In Dhikr & Dua > Aurad Fathiya, add a proper format toggle so the user can choose:
+
+Read as Text
+
+Read as PDF
+
+The PDF mode already exists, so preserve it.
+The new work is to add a Text mode that:
+
+uses the attached DOCX file as the source,
+
+is rendered page-wise,
+
+uses the same Arabic font as the Quran section,
+
+keeps the same theme system, typography behavior, spacing rhythm, and reading feel as the rest of the app,
+
+and shows the translation in a separate paragraph at the bottom of each page.
+
+What to do first
+Before making changes:
+
+Inspect the current codebase.
+
+Identify the existing Dhikr & Dua section.
+
+Identify the current Aurad Fathiya PDF implementation.
+
+Identify the Quran text renderer and exactly which font/component/style is used for Quran Arabic text.
+
+Identify how themes, dark mode, text sizing, and reading layout are handled.
+
+Identify the safest way to add Text mode without breaking PDF mode.
+
+Before major edits, summarize:
+
+which files control Aurad Fathiya,
+
+which files control Quran text rendering,
+
+where the shared reading styles live,
+
+and where the new format toggle should be implemented.
+
+DOCX ingestion requirement
+Use the attached Aurad-Fathiya.docx file as the source for Text mode.
+
+Please:
+
+read and extract the DOCX content cleanly,
+
+preserve RTL order correctly,
+
+preserve Arabic/Urdu text cleanly,
+
+structure the content into pages,
+
+and make sure the text mode matches the document page structure as closely as possible.
+
+If the DOCX structure already implies page-wise grouping, use that. If not, infer page sections carefully based on the document structure and source content, but keep the final app implementation explicitly page-wise.
+
+Do not dump the whole DOCX as one long text block.
+
+Text mode requirements
+Implement a new Aurad Fathiya Text Reader with these rules:
+
+Page-wise reading
+The text reader must be page-wise, not one long scroll blob.
+
+Each page should be displayed as its own page/card/reader screen section.
+
+The user should be able to navigate page by page.
+
+Add page indicators such as:
+
+Page 1 / N
+
+Previous / Next controls
+
+or swipe if the app already uses that pattern
+
+Arabic text
+Use the same Arabic font that is used in the Quran section.
+
+Reuse the Quran reader’s Arabic text styling as much as possible.
+
+Use the same line height, text direction, and reading container quality where appropriate.
+
+Preserve correct Arabic shaping and RTL behavior.
+
+Do not substitute a different Arabic font unless technically impossible.
+
+Translation at bottom
+At the bottom of each page, show the translation in a separate paragraph/block, below the main Arabic text.
+
+Translation behavior:
+
+Urdu translation is already included and should be supported.
+
+Add English translation support as well.
+
+The user must be able to choose translation language:
+
+Urdu
+
+English
+
+The translation section should:
+
+remain visually separate from the Arabic body,
+
+stay at the bottom of the page,
+
+not interrupt the Arabic reading flow,
+
+and match the app’s typography system.
+
+Translation requirements
+Implement a translation selector inside Aurad Fathiya Text mode:
+
+Urdu
+
+English
+
+Behavior:
+
+If Urdu is selected, show Urdu translation at the bottom of each page.
+
+If English is selected, show English translation at the bottom of each page.
+
+If the app supports “hide translation,” optionally support that too if it fits cleanly.
+
+Important:
+
+Urdu is already included in the source/implementation context, so preserve it.
+
+English translation must be implemented.
+
+Keep translation selection scoped to Aurad Fathiya unless the app already has a global reader language system.
+
+If English translation is not already present in the DOCX:
+
+create a clear structured place for English translation data,
+
+integrate it properly into the data model,
+
+and do not hardcode messy inline strings throughout UI components.
+
+Format toggle requirement
+In the Aurad Fathiya section, add a format selector such as:
+
+Text
+
+PDF
+
+Rules:
+
+Keep PDF mode fully working.
+
+Make Text mode the new additional option.
+
+Switching between Text and PDF should stay inside Aurad Fathiya context.
+
+Do not navigate the user away unnecessarily.
+
+Preserve theme and app shell consistency.
+
+UI consistency requirements
+Everything must stay in sync with the rest of the app:
+
+same theme tokens,
+
+same dark/light mode behavior,
+
+same font system,
+
+same header style,
+
+same reader spacing,
+
+same card/container language,
+
+same settings behavior where applicable.
+
+I want Aurad Fathiya Text mode to feel like a native reader inside the app, not like a separate document viewer.
+
+Specifically:
+
+Quran Arabic font should be reused for Arabic text.
+
+Existing body font system should be reused for translation text.
+
+The section should visually harmonize with Quran, Hadith, and Dhikr/Dua areas.
+
+Suggested data structure
+Please structure Aurad Fathiya text mode data cleanly, for example:
+
+ts
+type AuradFathiyaPage = {
+  pageNumber: number;
+  arabic: string;
+  urduTranslation?: string;
+  englishTranslation?: string;
+};
+
+type AuradFathiyaContent = {
+  id: "aurad-fathiya";
+  title: string;
+  totalPages: number;
+  pages: AuradFathiyaPage[];
+};
+If needed, store this in JSON generated from the DOCX source.
+
+Do not hardcode all content directly inside React/Flutter components.
+
+Rendering requirements
+For Text mode:
+
+render Arabic main content prominently,
+
+render translation below in a separate paragraph block,
+
+support RTL for Arabic and Urdu,
+
+support LTR for English if selected,
+
+keep visual separation clear,
+
+keep page transitions clean,
+
+and preserve readability on mobile and tablet.
+
+Settings integration
+If the app already has reader settings such as:
+
+theme,
+
+text size,
+
+line height,
+
+font scaling,
+
+dark mode,
+
+make Aurad Fathiya Text mode respect them where appropriate.
+
+If the Quran section has configurable Arabic font sizing, reuse the same logic for Aurad Fathiya Arabic text if possible.
+
+Edge cases to handle
+Please handle:
+
+DOCX extraction issues,
+
+RTL ordering problems,
+
+mixed Arabic + Urdu page content,
+
+translation switching without layout breakage,
+
+empty translation on a page,
+
+large pages,
+
+small screens,
+
+dark mode readability,
+
+page navigation state persistence if that pattern already exists in the app.
+
+Implementation order
+Please work in this order:
+
+Inspect current app architecture.
+
+Identify Aurad Fathiya PDF implementation.
+
+Identify Quran Arabic font and reader styles.
+
+Parse and extract content from the attached Aurad-Fathiya.docx.
+
+Structure the content into page-wise text data.
+
+Add Aurad Fathiya format toggle: Text / PDF.
+
+Build the new Text mode reader.
+
+Add translation selector: Urdu / English.
+
+Render translation at the bottom of each page in a separate paragraph.
+
+Ensure theme/font consistency with the rest of the app.
+
+Test both Text and PDF modes.
+
+Safety rules
+Do not remove the current PDF implementation.
+
+Do not refactor unrelated Dhikr/Dua functionality.
+
+Do not change Quran rendering except to reuse its font/style system.
+
+Do not hardcode inconsistent fonts.
+
+Do not break existing navigation.
+
+Make minimal, maintainable changes only.
+
+Final output required
+When done, show me:
+
+which files were changed,
+
+which files were added,
+
+how the DOCX was parsed,
+
+how page-wise text data is stored,
+
+how the Quran font/style was reused,
+
+how Urdu and English translation switching works,
+
+and confirmation that PDF mode still works.
+
+Shorter version
+Modify my existing app’s Dhikr & Dua > Aurad Fathiya section so users can choose to read Aurad Fathiya in PDF mode or Text mode. Keep the current PDF implementation intact. Use the attached Aurad-Fathiya.docx as the source for the new Text mode, render it page-wise, apply the same Arabic font and reading style used in the Quran section, and show the translation in a separate paragraph at the bottom of each page. Support translation selection between Urdu and English, and make sure the entire implementation stays visually and behaviorally consistent with the rest of the app, including themes and typography.

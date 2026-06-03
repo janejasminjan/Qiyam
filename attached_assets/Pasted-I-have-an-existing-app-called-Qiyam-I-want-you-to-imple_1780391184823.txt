@@ -1,0 +1,205 @@
+I have an existing app called Qiyam. I want you to implement proper navigation across the entire app and also add finger swipe page navigation in all page-based reading sections such as:
+Aurad Fathiya
+Dua-e-Subah
+and any other similar section in the app where content is implemented page by page.
+This is an existing app, so do not rebuild it from scratch.
+Do not redesign unrelated features.
+Do not break current working content.
+Make clean, production-quality, maintainable improvements only. Replit prompting guidance recommends clear scope and staged edits for existing projects.
+Main goals
+Implement these two major improvements:
+1. Proper navigation across the app
+The app should have a navigation system that feels complete, consistent, and easy to understand.
+2. Swipe-based page navigation in page-based readers
+In sections where content is page-based, users should be able to move between pages using finger swipe gestures in addition to buttons or other navigation controls.
+First step: inspect the current app
+Before changing anything:
+Inspect the current codebase.
+Map the full app structure and screen hierarchy.
+Identify all top-level sections and nested screens.
+Identify how navigation is currently implemented.
+Identify all sections that use page-based reading.
+Identify which screens currently support next/previous page buttons, pagination, tabs, or scroll-based reading.
+Identify gesture conflicts that may happen with scroll containers, PDF viewers, drawers, tabs, carousels, or browser back gestures.
+Before major implementation, summarize:
+current navigation structure,
+current navigation problems,
+all page-based sections that need swipe support,
+and the safest architecture changes required.
+Part 1: Proper navigation across the app
+I want the app-wide navigation to feel polished and consistent.
+Please improve navigation so that:
+top-level sections are easy to access,
+nested detail pages are predictable,
+back navigation is reliable,
+screen headers are consistent,
+routes/screens are named clearly,
+and the user never feels lost.
+Navigation requirements
+Implement or improve:
+clear top-level navigation,
+proper nested navigation for section detail pages,
+correct back behavior,
+active state indication for the current section,
+predictable transitions between list/detail/reader screens,
+persistent app shell if the app already uses one,
+and state-safe transitions so user context is preserved where possible.
+Specific app areas to consider
+Make sure navigation works properly for sections like:
+Quran
+Hadith
+Dhikr & Dua
+Aurad Fathiya
+Dua-e-Subah
+any page-based reader/detail section already present in Qiyam
+If the app already has bottom navigation, drawer navigation, tabs, or stack navigation, improve and standardize that instead of replacing everything unnecessarily.
+Navigation UX quality
+Make sure:
+users can always go back properly,
+deep screens have clear titles,
+there are no dead ends,
+there is no duplicated or inconsistent screen routing,
+and navigation patterns feel unified across the app.
+Part 2: Swipe between pages in page-based sections
+In any section where content is implemented page by page, I want the user to be able to swipe with finger to move between pages.
+This should apply to:
+Aurad Fathiya
+Dua-e-Subah
+and all other page-structured reading sections in Qiyam
+Swipe behavior requirements
+Implement page turning via swipe with these rules:
+swipe left/right or the correct directional gesture for the UI pattern being used,
+page change should feel smooth,
+users should still be able to use existing next/previous buttons if already present,
+swipe should work naturally on mobile touch devices,
+page indicators should update immediately,
+current page state should remain accurate.
+Important behavior
+Swipe navigation should work for text-based page readers.
+If a section contains PDF pages, handle swipe carefully so it does not conflict with PDF zoom/pan behavior unless the PDF viewer already supports controlled page swiping.
+Do not force a gesture that makes reading worse.
+Page navigation UI
+For page-based readers, keep or add:
+page number indicator,
+previous/next controls,
+optional swipe hint on first use,
+progress indicator if appropriate,
+and persisted last-read page if that feature already exists or is easy to support.
+Reader UX quality
+The page reader should feel like a proper reading interface:
+smooth page transitions,
+no accidental double page changes,
+no jitter,
+no broken scroll/swipe conflicts,
+no gesture lag,
+and no loss of reading position when returning to the section.
+Swipe-based reading UX needs special care because gesture handling can conflict with normal scrolling and other interactions, so it should be implemented intentionally, not as a generic carousel dropped into the app.
+Gesture rules and conflict handling
+Handle gesture logic carefully.
+For page-based text readers
+horizontal swipe should move to next/previous page if the reader is page-based,
+taps on buttons should still work,
+page state should remain in sync with UI.
+For vertically scrollable content
+do not break vertical reading behavior unnecessarily,
+if a screen is meant to scroll vertically rather than paginate, do not force page swipe there.
+For PDF mode
+if Aurad Fathiya or other sections have PDF mode, swipe behavior must not break zooming, panning, or native PDF interactions.
+If needed, keep swipe-to-change-page only for text mode, and use the PDF viewer’s own native navigation for PDF mode.
+For nested gestures
+Check and resolve conflicts with:
+drawer open gestures,
+tab swipes,
+browser back swipe,
+PDF pan/zoom,
+scroll views,
+modal sheets.
+Architecture requirements
+Please implement this cleanly and consistently.
+Navigation architecture
+Reuse the app’s current navigation library or routing system.
+If the app already uses a navigation stack/router, improve it rather than replacing it.
+Only propose a larger refactor if the current setup is truly broken.
+Reader/page architecture
+Create or improve a shared page-reader pattern for page-based sections, so swipe behavior is reusable across:
+Aurad Fathiya
+Dua-e-Subah
+similar Dhikr & Dua pages
+any future page-based devotional readers
+I do not want one-off duplicated swipe logic in every screen.
+Suggested reusable components
+If suitable, create shared structures such as:
+AppNavigator improvements
+SectionHeader
+PageReader
+PageNavigationControls
+SwipePageContainer
+ReaderProgressIndicator
+Use names that fit the current codebase style.
+State requirements
+Navigation and reader state should be preserved properly:
+current section
+current screen
+current page in reader
+last visited page
+selected format if applicable, e.g. text/pdf
+selected translation if applicable
+If the app already supports local persistence or per-user storage, integrate with that rather than inventing a totally separate state system.
+Performance requirements
+Swipe navigation must feel responsive.
+Avoid rerendering entire large trees on every swipe.
+Only load/render nearby pages if helpful for performance.
+Keep memory usage reasonable.
+Preserve smooth interaction on mobile devices.
+Page-based navigation patterns often benefit from loading only nearby views and reusing containers rather than rebuilding everything on each gesture.
+UI consistency requirements
+Everything must stay visually in sync with the existing Qiyam app:
+same theme system,
+same typography,
+same spacing,
+same headers,
+same card styles,
+same dark/light mode behavior,
+same interaction language.
+Do not introduce a generic swipe carousel look that clashes with the rest of the app.
+Accessibility requirements
+Please include:
+visible page controls in addition to swipe,
+accessible labels for navigation buttons,
+keyboard or button fallback where relevant,
+sufficient touch target sizes,
+and stable page indicators.
+Do not make swipe the only way to navigate.
+Sections to audit
+Please explicitly audit and implement swipe/page navigation where applicable in:
+Aurad Fathiya
+Dua-e-Subah
+any other Dhikr & Dua page-based section
+any other devotional reader in the app that is clearly page-based
+If a section should not get swipe navigation, explain why.
+Implementation order
+Please work in this order:
+Inspect and document the current app navigation structure.
+Identify all navigation inconsistencies and page-based sections.
+Improve app-wide navigation architecture with minimal safe changes.
+Create or improve a reusable page-reader/swipe container.
+Implement swipe page navigation in Aurad Fathiya.
+Implement swipe page navigation in Dua-e-Subah.
+Extend the same pattern to other relevant page-based sections.
+Test gesture conflicts, back navigation, and state persistence.
+Polish UI consistency and interaction smoothness.
+Safety rules
+Do not rebuild the whole app.
+Do not refactor unrelated features.
+Do not break Quran, Hadith, Dhikr & Dua, PDF readers, bookmarks, audio, or settings.
+Do not remove existing next/previous navigation if present.
+If a larger navigation refactor is necessary, explain it first before doing it.
+Final output required
+When done, show me:
+which files were changed,
+how navigation was improved across the app,
+which sections now support swipe page navigation,
+how gesture conflicts were handled,
+how page state is preserved,
+and what reusable components or utilities were introduced. 
+Before implementing, present a short plan listing the current navigation issues, the sections that need swipe support, and any gesture conflicts you expect, then proceed only with the smallest safe architecture change

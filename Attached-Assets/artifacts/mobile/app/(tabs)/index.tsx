@@ -6,7 +6,7 @@ import {
   useGetBookmarks,
 } from "@workspace/api-client-react";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -20,6 +20,36 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
+import { fetchAyah, type AlquranAyahFull } from "@/lib/quran-api";
+import { SURAH_LIST } from "@/lib/surah-list";
+import { PrayerTimesCard } from "@/components/PrayerTimesCard";
+import { SmartSuggestionsCard } from "@/components/SmartSuggestionsCard";
+
+const FEATURED_AYAHS = [
+  { surahId: 2,  ayahNum: 255 },
+  { surahId: 13, ayahNum: 28  },
+  { surahId: 2,  ayahNum: 286 },
+  { surahId: 65, ayahNum: 3   },
+  { surahId: 39, ayahNum: 53  },
+  { surahId: 94, ayahNum: 5   },
+  { surahId: 3,  ayahNum: 139 },
+  { surahId: 2,  ayahNum: 153 },
+  { surahId: 16, ayahNum: 97  },
+  { surahId: 55, ayahNum: 13  },
+  { surahId: 112,ayahNum: 1   },
+  { surahId: 1,  ayahNum: 1   },
+  { surahId: 33, ayahNum: 21  },
+  { surahId: 18, ayahNum: 10  },
+];
+
+const TRENDING_SURAHS = [
+  { id: 36, name: "Yaseen",      arabic: "يس"       },
+  { id: 67, name: "Al-Mulk",    arabic: "الملك"     },
+  { id: 18, name: "Al-Kahf",    arabic: "الكهف"     },
+  { id: 56, name: "Al-Waqi'ah", arabic: "الواقعة"   },
+  { id: 55, name: "Ar-Rahman",  arabic: "الرحمن"    },
+  { id: 1,  name: "Al-Fatihah", arabic: "الفاتحة"   },
+];
 
 function StatCard({
   label,
@@ -51,6 +81,20 @@ export default function DashboardScreen() {
   const { data: progress, isLoading: progressLoading, refetch: refetchProgress } = useGetProgress();
   const { data: dueReviews, refetch: refetchDue } = useGetDueReviews();
   const { data: bookmarks } = useGetBookmarks();
+
+  const [ayahOfDay, setAyahOfDay] = useState<AlquranAyahFull | null>(null);
+  const [ayahRef, setAyahRef] = useState<{ surahId: number; ayahNum: number } | null>(null);
+
+  useEffect(() => {
+    const dayOfYear = Math.floor(
+      (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
+    );
+    const ref = FEATURED_AYAHS[dayOfYear % FEATURED_AYAHS.length];
+    setAyahRef(ref);
+    fetchAyah(ref.surahId, ref.ayahNum)
+      .then(setAyahOfDay)
+      .catch(() => {});
+  }, []);
 
   const isLoading = profileLoading || progressLoading;
   const isRefreshing = false;
@@ -109,6 +153,47 @@ export default function DashboardScreen() {
             <StatCard label="Due Reviews" value={dueCount} icon="refresh-circle" color="#8B5CF6" />
             <StatCard label="Bookmarks" value={bookmarkCount} icon="bookmark" color="#EC4899" />
           </View>
+
+          {/* Prayer Times */}
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Prayer Times</Text>
+          <PrayerTimesCard />
+
+          {/* Smart Suggestions */}
+          <SmartSuggestionsCard />
+
+          {/* Ayah of the Day */}
+          {ayahOfDay && ayahRef && (
+            <>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+                Ayah of the Day
+              </Text>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.ayahCard,
+                  { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.9 : 1 },
+                ]}
+                onPress={() => router.push(`/quran/${ayahRef.surahId}`)}
+              >
+                <View style={styles.ayahCardHeader}>
+                  <View style={[styles.ayahPill, { backgroundColor: colors.primary + "1A" }]}>
+                    <Text style={[styles.ayahPillText, { color: colors.primary }]}>
+                      {SURAH_LIST.find((s) => s.id === ayahRef.surahId)?.transliteration ?? `Surah ${ayahRef.surahId}`}
+                      {" "}·{" "}
+                      {SURAH_LIST.find((s) => s.id === ayahRef.surahId)?.name}
+                      {" "}:{ayahRef.ayahNum}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={14} color={colors.mutedForeground} />
+                </View>
+                <Text style={[styles.ayahArabic, { color: colors.foreground }]} numberOfLines={3}>
+                  {ayahOfDay.arabicText}
+                </Text>
+                <Text style={[styles.ayahTranslation, { color: colors.mutedForeground }]} numberOfLines={3}>
+                  {ayahOfDay.translationText}
+                </Text>
+              </Pressable>
+            </>
+          )}
 
           {/* Quick actions */}
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Quick Start</Text>
@@ -192,6 +277,25 @@ export default function DashboardScreen() {
               </View>
             </>
           )}
+
+          {/* Trending Surahs */}
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Popular Surahs</Text>
+          <View style={styles.trendingGrid}>
+            {TRENDING_SURAHS.map((s) => (
+              <Pressable
+                key={s.id}
+                style={({ pressed }) => [
+                  styles.trendingCard,
+                  { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
+                ]}
+                onPress={() => router.push(`/quran/${s.id}`)}
+              >
+                <Text style={[styles.trendingArabic, { color: colors.primary }]}>{s.arabic}</Text>
+                <Text style={[styles.trendingName, { color: colors.foreground }]}>{s.name}</Text>
+                <Text style={[styles.trendingNum, { color: colors.mutedForeground }]}>Surah {s.id}</Text>
+              </Pressable>
+            ))}
+          </View>
         </>
       )}
     </ScrollView>
@@ -263,4 +367,24 @@ const styles = StyleSheet.create({
   progressBar: { height: 8, borderRadius: 4, overflow: "hidden" },
   progressFill: { height: "100%", borderRadius: 4 },
   progressPercent: { fontSize: 12, textAlign: "center" },
+  ayahCard: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 10 },
+  ayahCardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  ayahPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  ayahPillText: { fontSize: 12, fontWeight: "600" },
+  ayahArabic: { fontSize: 22, lineHeight: 40, textAlign: "right", writingDirection: "rtl", fontWeight: "500" },
+  ayahTranslation: { fontSize: 13, lineHeight: 20, fontStyle: "italic" },
+  trendingGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  trendingCard: {
+    width: "30%",
+    flex: 1,
+    minWidth: "28%",
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+    alignItems: "center",
+    gap: 4,
+  },
+  trendingArabic: { fontSize: 20, fontWeight: "700", lineHeight: 32 },
+  trendingName: { fontSize: 12, fontWeight: "700", textAlign: "center" },
+  trendingNum: { fontSize: 10, textAlign: "center" },
 });

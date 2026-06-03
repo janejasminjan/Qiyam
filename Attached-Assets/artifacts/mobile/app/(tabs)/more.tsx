@@ -4,7 +4,11 @@ import {
   useUpdateUserProfile,
 } from "@workspace/api-client-react";
 import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
+import { usePrayerSettings } from "@/hooks/usePrayerSettings";
+import { CALCULATION_METHODS, type CalculationMethodKey, type Madhab } from "@/lib/prayer-times";
+import { requestPrayerNotificationPermission } from "@/hooks/usePrayerNotifications";
 import {
   ActivityIndicator,
   Alert,
@@ -102,6 +106,7 @@ function PickerModal<T extends string>({
 export default function MoreScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : 0;
 
@@ -112,6 +117,36 @@ export default function MoreScreen() {
   const [showTranslationPicker, setShowTranslationPicker] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
+
+  const { settings: prayerSettings, setSettings: setPrayerSettings, locationStatus, fetchLocation } = usePrayerSettings();
+  const [showMadhabPicker, setShowMadhabPicker] = useState(false);
+  const [showMethodPicker, setShowMethodPicker] = useState(false);
+  const [cityInput, setCityInput] = useState(prayerSettings.cityName ?? "");
+  const [countryInput, setCountryInput] = useState(prayerSettings.countryName ?? "");
+
+  const MADHABS: { id: Madhab; name: string }[] = [
+    { id: "hanafi",  name: "Hanafi"  },
+    { id: "shafi",   name: "Shafi'i" },
+    { id: "maliki",  name: "Maliki"  },
+    { id: "hanbali", name: "Hanbali" },
+    { id: "jafari",  name: "Jafari"  },
+  ];
+
+  const METHODS = Object.entries(CALCULATION_METHODS).map(([key, val]) => ({
+    id: key as CalculationMethodKey,
+    name: `${val.label} (${val.region})`,
+  }));
+
+  const handleEnableNotifications = async (value: boolean) => {
+    if (value) {
+      const granted = await requestPrayerNotificationPermission();
+      if (!granted) {
+        Alert.alert("Permission Denied", "Allow notifications in your device settings to receive prayer alerts.");
+        return;
+      }
+    }
+    setPrayerSettings({ notificationsEnabled: value });
+  };
 
   function update(fields: Parameters<typeof updateProfile.mutate>[0]) {
     if (Platform.OS !== "web") Haptics.selectionAsync();
@@ -182,6 +217,33 @@ export default function MoreScreen() {
               {profile?.goal ?? "–"} · {profile?.level ?? "–"}
             </Text>
           </View>
+        </View>
+
+        {/* Navigation sections */}
+        <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>SECTIONS</Text>
+        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          {[
+            { icon: "book-outline",     label: "Hadith",    sub: "Narrations of the Prophet ﷺ", route: "/hadith"     },
+            { icon: "bookmark-outline", label: "Bookmarks", sub: "Saved ayahs",                 route: "/bookmarks"  },
+          ].map(({ icon, label, sub, route }) => (
+            <Pressable
+              key={route}
+              style={({ pressed }) => [
+                styles.navRow,
+                { borderBottomColor: colors.border, backgroundColor: pressed ? colors.muted : "transparent" },
+              ]}
+              onPress={() => router.push(route as any)}
+            >
+              <View style={[styles.navIcon, { backgroundColor: colors.primary + "1A" }]}>
+                <Ionicons name={icon as any} size={18} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.navLabel, { color: colors.foreground }]}>{label}</Text>
+                <Text style={[styles.navSub, { color: colors.mutedForeground }]}>{sub}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
+            </Pressable>
+          ))}
         </View>
 
         {/* Reading settings */}
@@ -267,7 +329,182 @@ export default function MoreScreen() {
             </Pressable>
           ))}
         </View>
+
+        {/* ── Prayer Times ────────────────────────────────────── */}
+        <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>PRAYER TIMES</Text>
+        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+
+          {/* Location mode */}
+          <View style={[styles.settingRow, { borderBottomColor: colors.border }]}>
+            <Ionicons name="location-outline" size={18} color={colors.mutedForeground} />
+            <Text style={[styles.settingLabel, { color: colors.foreground }]}>Location</Text>
+            <View style={styles.settingControl}>
+              <View style={{ flexDirection: "row", gap: 6 }}>
+                {(["auto", "manual"] as const).map(mode => (
+                  <Pressable
+                    key={mode}
+                    style={[
+                      styles.modeBtn,
+                      { backgroundColor: prayerSettings.locationMode === mode ? colors.primary : colors.muted },
+                    ]}
+                    onPress={() => setPrayerSettings({ locationMode: mode })}
+                  >
+                    <Text style={{ color: prayerSettings.locationMode === mode ? colors.primaryForeground : colors.foreground, fontSize: 11, fontWeight: "600" }}>
+                      {mode === "auto" ? "Auto" : "Manual"}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          {/* Auto: detect button */}
+          {prayerSettings.locationMode === "auto" && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.locationDetectBtn,
+                { borderBottomColor: colors.border, opacity: pressed ? 0.7 : 1 },
+              ]}
+              onPress={fetchLocation}
+              disabled={locationStatus === "requesting"}
+            >
+              <Ionicons
+                name={locationStatus === "granted" ? "checkmark-circle-outline" : "navigate-outline"}
+                size={18}
+                color={locationStatus === "granted" ? "#22C55E" : colors.primary}
+              />
+              <Text style={{ color: locationStatus === "granted" ? "#22C55E" : colors.primary, fontSize: 13, fontWeight: "600" }}>
+                {locationStatus === "requesting" ? "Requesting…" :
+                 locationStatus === "granted" ? `Located: ${prayerSettings.latitude?.toFixed(2)}°, ${prayerSettings.longitude?.toFixed(2)}°` :
+                 locationStatus === "denied" ? "Permission denied" :
+                 "Detect My Location"}
+              </Text>
+            </Pressable>
+          )}
+
+          {/* Manual: city + country inputs */}
+          {prayerSettings.locationMode === "manual" && (
+            <View style={[styles.settingRow, { borderBottomColor: colors.border, flexDirection: "column", alignItems: "flex-start", gap: 8 }]}>
+              <TextInput
+                style={[styles.locationInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.muted }]}
+                placeholder="City (e.g. London)"
+                placeholderTextColor={colors.mutedForeground}
+                value={cityInput}
+                onChangeText={setCityInput}
+              />
+              <TextInput
+                style={[styles.locationInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.muted }]}
+                placeholder="Country (e.g. UK)"
+                placeholderTextColor={colors.mutedForeground}
+                value={countryInput}
+                onChangeText={setCountryInput}
+              />
+              <Pressable
+                style={({ pressed }) => [styles.saveBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 }]}
+                onPress={() => setPrayerSettings({ locationMode: "manual", cityName: cityInput.trim(), countryName: countryInput.trim(), latitude: undefined, longitude: undefined })}
+                disabled={!cityInput.trim()}
+              >
+                <Text style={{ color: colors.primaryForeground, fontSize: 13, fontWeight: "700" }}>Save Location</Text>
+              </Pressable>
+            </View>
+          )}
+
+          {/* Madhab */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.navRow,
+              { borderBottomColor: colors.border, backgroundColor: pressed ? colors.muted : "transparent" },
+            ]}
+            onPress={() => setShowMadhabPicker(true)}
+          >
+            <View style={[styles.navIcon, { backgroundColor: colors.primary + "1A" }]}>
+              <Ionicons name="school-outline" size={18} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.navLabel, { color: colors.foreground }]}>Madhab</Text>
+              <Text style={[styles.navSub, { color: colors.mutedForeground }]}>
+                {MADHABS.find(m => m.id === prayerSettings.madhab)?.name ?? prayerSettings.madhab}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
+          </Pressable>
+
+          {/* Calculation method */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.navRow,
+              { borderBottomColor: colors.border, backgroundColor: pressed ? colors.muted : "transparent" },
+            ]}
+            onPress={() => setShowMethodPicker(true)}
+          >
+            <View style={[styles.navIcon, { backgroundColor: colors.primary + "1A" }]}>
+              <Ionicons name="calculator-outline" size={18} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.navLabel, { color: colors.foreground }]}>Calculation Method</Text>
+              <Text style={[styles.navSub, { color: colors.mutedForeground }]} numberOfLines={1}>
+                {CALCULATION_METHODS[prayerSettings.calculationMethod]?.label ?? prayerSettings.calculationMethod}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
+          </Pressable>
+
+          {/* Notifications */}
+          <SettingRow icon="notifications-outline" label="Prayer Notifications">
+            <Switch
+              value={prayerSettings.notificationsEnabled}
+              onValueChange={handleEnableNotifications}
+              trackColor={{ false: colors.muted, true: colors.primary }}
+              thumbColor={colors.primaryForeground}
+            />
+          </SettingRow>
+
+          {/* Lead time (if notifications on) */}
+          {prayerSettings.notificationsEnabled && (
+            <View style={[styles.settingRow, { borderBottomColor: colors.border, flexDirection: "column", alignItems: "flex-start" }]}>
+              <Text style={[styles.settingLabel, { color: colors.foreground, marginBottom: 8 }]}>Notify me…</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                {[{ value: 0, label: "At time" }, { value: 5, label: "5 min before" }, { value: 10, label: "10 min before" }, { value: 15, label: "15 min before" }].map(opt => (
+                  <Pressable
+                    key={opt.value}
+                    style={[
+                      styles.leadBtn,
+                      { borderColor: prayerSettings.notificationLeadMinutes === opt.value ? colors.primary : colors.border,
+                        backgroundColor: prayerSettings.notificationLeadMinutes === opt.value ? colors.primary + "1A" : "transparent" },
+                    ]}
+                    onPress={() => setPrayerSettings({ notificationLeadMinutes: opt.value })}
+                  >
+                    <Text style={{ color: prayerSettings.notificationLeadMinutes === opt.value ? colors.primary : colors.mutedForeground, fontSize: 12 }}>
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
+
       </ScrollView>
+
+      {showMadhabPicker && (
+        <PickerModal
+          title="School of Thought"
+          options={MADHABS}
+          value={prayerSettings.madhab as any}
+          onSelect={(id) => setPrayerSettings({ madhab: id as Madhab })}
+          onClose={() => setShowMadhabPicker(false)}
+        />
+      )}
+
+      {showMethodPicker && (
+        <PickerModal
+          title="Calculation Method"
+          options={METHODS}
+          value={prayerSettings.calculationMethod as any}
+          onSelect={(id) => setPrayerSettings({ calculationMethod: id as CalculationMethodKey })}
+          onClose={() => setShowMethodPicker(false)}
+        />
+      )}
 
       {showReciterPicker && (
         <PickerModal
@@ -348,6 +585,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   goalText: { fontSize: 14, fontWeight: "500" },
+  navRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    gap: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  navIcon: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  navLabel: { fontSize: 14, fontWeight: "600" },
+  navSub: { fontSize: 12, marginTop: 1 },
   modalOverlay: {
     backgroundColor: "rgba(0,0,0,0.4)",
     alignItems: "center",
@@ -372,4 +620,37 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   modalOptionText: { fontSize: 14 },
+  modeBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  locationDetectBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  locationInput: {
+    width: "100%",
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
+  },
+  saveBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  leadBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
 });

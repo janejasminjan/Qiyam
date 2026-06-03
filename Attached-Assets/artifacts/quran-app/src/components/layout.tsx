@@ -188,7 +188,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { name: "Settings",    href: "/settings",  icon: SettingsIcon,    badge: 0              },
   ];
 
-  const PRIMARY_NAMES = ["Dashboard", "Quran", "Memorize", "Review"];
+  const PRIMARY_NAMES = ["Dashboard", "Quran", "Dhikr & Dua", "Memorize"];
   const primaryNav    = allNav.filter(n => PRIMARY_NAMES.includes(n.name));
   const moreNav       = allNav.filter(n => !PRIMARY_NAMES.includes(n.name));
   const moreHasActive = moreNav.some(n => location.startsWith(n.href));

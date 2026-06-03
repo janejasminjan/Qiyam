@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { Link, useParams } from "wouter";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Link, useParams, useLocation } from "wouter";
+import { useSwipePage } from "@/hooks/use-swipe-page";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, ChevronRight, Search, Loader2, AlertTriangle,
@@ -369,6 +370,15 @@ export default function HadithReader() {
   const prevSection = sectionNum > 1 ? sectionNum - 1 : null;
   const nextSection = book && sectionNum < book.sectionCount ? sectionNum + 1 : null;
 
+  const [, navigate] = useLocation();
+  const navigateNext = useCallback(() => {
+    if (nextSection && book) navigate(`/hadith/${book.id}/${nextSection}`);
+  }, [nextSection, book, navigate]);
+  const navigatePrev = useCallback(() => {
+    if (prevSection && book) navigate(`/hadith/${book.id}/${prevSection}`);
+  }, [prevSection, book, navigate]);
+  const swipe = useSwipePage({ onNext: navigateNext, onPrev: navigatePrev, enabled: !loading && !!book });
+
   if (!book) {
     return (
       <div className="flex flex-col items-center justify-center min-h-64 gap-4 p-8 text-center">
@@ -383,7 +393,7 @@ export default function HadithReader() {
 
   return (
     <>
-    <div className="p-6 md:p-10 max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div {...swipe} className="p-6 md:p-10 max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500">
 
       {/* ── Breadcrumb ────────────────────────────────────────── */}
       <div className="flex items-center gap-1 text-xs text-muted-foreground flex-wrap">

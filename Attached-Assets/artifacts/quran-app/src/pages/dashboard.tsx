@@ -11,6 +11,8 @@ import { useReminders } from "@/hooks/use-reminders";
 import { motion, AnimatePresence } from "framer-motion";
 import { getDailyPosition, type DailyPosition } from "@/hooks/use-daily-position";
 import { fetchSection, bookById } from "@/lib/hadith-api";
+import { PrayerTimesCard } from "@/components/prayer-times-card";
+import { SmartSuggestionsCard } from "@/components/smart-suggestions-card";
 
 const SURAH_NAMES: Record<number, string> = {
   1:"Al-Fatiha",2:"Al-Baqara",3:"Ali 'Imran",4:"An-Nisa",5:"Al-Ma'ida",
@@ -521,6 +523,12 @@ export default function Dashboard() {
         <h1 className="text-3xl font-serif font-bold text-primary">Dashboard</h1>
         <p className="text-muted-foreground">Your daily progress and stats.</p>
       </div>
+
+      {/* ── Prayer Times ──────────────────────────────────────── */}
+      <PrayerTimesCard />
+
+      {/* ── Smart Suggestions ─────────────────────────────────── */}
+      <SmartSuggestionsCard />
 
       {/* ── Ayah of the Day ──────────────────────────────────── */}
       <AyahOfDayCard />

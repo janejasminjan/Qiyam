@@ -23,7 +23,7 @@ function NativeTabLayout() {
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="dhikr">
         <Icon sf={{ default: "hands.sparkles", selected: "hands.sparkles.fill" }} />
-        <Label>Dhikr</Label>
+        <Label>Dhikr & Dua</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="memorize">
         <Icon sf={{ default: "brain", selected: "brain.fill" }} />
@@ -98,7 +98,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="dhikr"
         options={{
-          title: "Dhikr",
+          title: "Dhikr & Dua",
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="hands.sparkles" tintColor={color} size={24} />

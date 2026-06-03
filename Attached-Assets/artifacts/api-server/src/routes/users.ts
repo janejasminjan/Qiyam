@@ -8,6 +8,14 @@ const router = Router();
 router.get("/users/profile", async (req, res) => {
   try {
     const userId = req.resolvedUserId;
+
+    // Ensure the user row exists (handles the race between the fire-and-forget
+    // insert in guestMiddleware and this first profile fetch).
+    await db
+      .insert(usersTable)
+      .values({ id: userId, isGuest: true })
+      .onConflictDoNothing();
+
     const [user] = await db
       .select()
       .from(usersTable)

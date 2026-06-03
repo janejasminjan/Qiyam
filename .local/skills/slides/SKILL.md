@@ -57,7 +57,7 @@ This section is about *what* to match, not *when* to start. The order of operati
 
 The preview image is the ground truth. The text description and source code supplement it with precise values. Follow both as your creative direction, then adapt to the specific content.
 
-When the user selected an "Auto" option, no preview image is injected. Follow the standard planning process below to develop an original creative direction.
+When the user selected **Auto** or **Professional** (no preview image injected): for Auto, follow the standard planning process below. For Professional, **read `./references/professional_slides.md` before drafting the outline and follow it verbatim** — that file is the source of truth for exec/board-ready decks and overrides the decorative defaults below.
 
 ### Required: Content Outline Review (new decks only)
 

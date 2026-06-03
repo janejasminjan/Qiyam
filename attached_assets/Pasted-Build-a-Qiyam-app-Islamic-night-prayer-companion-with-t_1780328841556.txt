@@ -1,0 +1,149 @@
+Build a Qiyam app (Islamic night prayer companion) with the following platform-aware asset system. Use the design spec below to implement all splash screens, icons, and favicons.
+
+═══ DESIGN SPECIFICATION ═══
+App Name: Qiyam (قيام)
+Tagline: Night Prayer · Remembrance · Devotion
+
+Color Palette:
+  - Primary Background: Deep Emerald Green  → #0a2e1c to #1a5c3a (radial gradient, center lighter)
+  - Primary Accent: Antique Gold            → #d4a81a
+  - Secondary Accent: Soft Gold             → #c9a227
+  - Text on Dark: Gold                      → #d4a81a / #c9a227
+  - Decorative Ring Stroke: Gold 30% opacity
+
+Logo Elements (always in gold #d4a81a):
+  1. Crescent moon (circle partially eclipsed by background circle)
+  2. Minaret/mosque tower centered inside crescent
+  3. Small dome atop the minaret spire
+  4. A 5-pointed star to the right of the crescent
+  5. Arabic calligraphy "قيام" below the emblem
+  6. Latin text "QIYAM" in spaced serif/Cinzel font
+  7. Background: subtle mandala/geometric ring pattern (low opacity gold strokes)
+
+Typography:
+  - Arabic: system serif or a loaded Arabic font (e.g. Amiri, Scheherazade)
+  - Latin Title: Cinzel or Cormorant Garamond, weight 600, letter-spacing 0.3em
+  - Tagline: 10–12px, letter-spacing 0.2em, 55% opacity gold
+
+═══ ASSET SIZES TO GENERATE ═══
+
+1. WEB APP SPLASH (splashWeb.svg / splashWeb.png)
+   Size: 1280 × 800px
+   Layout: Centered emblem, Arabic + QIYAM text, tagline below
+   Usage: HTML meta tag or PWA manifest
+
+2. IOS SPLASH (splashIOS.png)
+   Size: 390 × 844px (iPhone 14 base — scale up for larger sizes)
+   Additional: 428×926 (Pro Max), 1290×2796 (Pro Max 3x)
+   Layout: Centered emblem with extra vertical breathing room
+   Usage: 
+
+3. ANDROID SPLASH (splashAndroid.png / splash.xml)
+   Size: 360 × 800px base (also generate 1080×2400 for xxxhdpi)
+   Layout: Same centered design — Android 12+ windowSplashScreenBackground
+   Usage: styles.xml splash theme or Capacitor splash config
+
+4. ANDROID ICON (icon-android.png / adaptive icon)
+   Size: 512 × 512px foreground layer (safe zone: 66px inner circle from each edge)
+   Corner mask: Squircle applied by system
+   Files: ic_launcher_foreground.png (512px) + ic_launcher_background.png (solid #0a2e1c)
+   Usage: mipmap-* folders via Android Studio
+
+5. IOS ICON (icon-ios.png)
+   Size: 1024 × 1024px — NO transparency, NO rounded corners (system clips)
+   File: AppIcon.appiconset/AppIcon-1024.png
+   Usage: Xcode asset catalog (Capacitor: resources/ios/icon.png)
+
+6. DESKTOP ICON (icon-desktop.png / icon.icns / icon.ico)
+   Sizes: 512×512 PNG minimum; convert with iconutil (macOS) or ImageMagick for .icns/.ico
+   Thin gold border at outer edge (2px, 50% opacity)
+   Usage: Electron icon, macOS .app, Windows .exe
+
+7. FAVICON (favicon.ico + favicon-32.png + favicon-16.png)
+   favicon.ico: multi-size container (16, 32, 48px frames)
+   favicon-32.png: 32×32, simplified emblem — crescent + spire + "قيام" text
+   favicon-16.png: 16×16, just crescent + single "ق" letter
+   Usage:  in HTML 
+
+═══ PLATFORM DETECTION (use in app code) ═══
+
+Detect platform and load the correct asset:
+
+const platform = (() => {
+  const ua = navigator.userAgent;
+  if (/android/i.test(ua)) return 'android';
+  if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) return 'ios';
+  if (window.matchMedia('(display-mode: standalone)').matches) return 'pwa';
+  return 'web';
+})();
+
+const splashAsset = {
+  android: '/assets/splashAndroid.png',
+  ios:     '/assets/splashIOS.png',
+  pwa:     '/assets/splashWeb.png',
+  web:     '/assets/splashWeb.png',
+}[platform];
+
+// Show splash on load, hide after 2.5s
+const splash = document.getElementById('splash');
+if (splash) {
+  splash.style.backgroundImage = `url(${splashAsset})`;
+  setTimeout(() => splash.classList.add('hidden'), 2500);
+}
+
+═══ HTML HEAD TAGS ═══
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+═══ PWA MANIFEST (manifest.json) ═══
+
+{
+  "name": "Qiyam – Night Prayer",
+  "short_name": "Qiyam",
+  "description": "Your companion for Qiyam al-Layl — night prayer, dhikr, and devotion.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a2e1c",
+  "theme_color": "#0a2e1c",
+  "icons": [
+    { "src": "/assets/icon-android.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/assets/icon-android.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "splash_pages": null
+}
+
+═══ CAPACITOR CONFIG (capacitor.config.ts) ═══
+
+import { CapacitorConfig } from '@capacitor/cli';
+const config: CapacitorConfig = {
+  appId: 'com.qiyam.app',
+  appName: 'Qiyam',
+  webDir: 'dist',
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 2500,
+      launchAutoHide: true,
+      backgroundColor: '#0a2e1c',
+      androidSplashResourceName: 'splash',
+      androidScaleType: 'CENTER_CROP',
+      showSpinner: false,
+      iosSpinnerStyle: 'small',
+      spinnerColor: '#d4a81a',
+    },
+  },
+};
+export default config;

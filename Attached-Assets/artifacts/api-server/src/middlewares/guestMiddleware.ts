@@ -38,15 +38,15 @@ export async function guestMiddleware(
     });
   }
 
-  // Ensure the guest user row exists (idempotent)
-  try {
-    await db
-      .insert(usersTable)
-      .values({ id: guestId, isGuest: true })
-      .onConflictDoNothing();
-  } catch {
-    // If DB is temporarily unavailable, continue anyway
-  }
+  // Fire-and-forget: insert the guest row without awaiting.
+  // We never block the request pipeline on a DB write here.
+  // If the DB is slow the insert completes in the background; on conflict it's a no-op.
+  db.insert(usersTable)
+    .values({ id: guestId, isGuest: true })
+    .onConflictDoNothing()
+    .catch(() => {
+      /* DB temporarily unavailable — silently ignore */
+    });
 
   req.resolvedUserId = guestId;
   next();

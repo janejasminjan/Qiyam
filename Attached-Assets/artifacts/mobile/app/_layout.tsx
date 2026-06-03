@@ -37,6 +37,10 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="quran/[surahId]" options={{ headerShown: false }} />
       <Stack.Screen name="dhikr/[collectionId]" options={{ headerShown: false }} />
+      <Stack.Screen name="hadith/index" options={{ headerShown: false }} />
+      <Stack.Screen name="hadith/[bookId]/index" options={{ headerShown: false }} />
+      <Stack.Screen name="hadith/[bookId]/[sectionId]" options={{ headerShown: false }} />
+      <Stack.Screen name="bookmarks" options={{ headerShown: false }} />
       <Stack.Screen name="+not-found" />
     </Stack>
   );

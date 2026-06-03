@@ -46,6 +46,8 @@ export interface DhikrCollection {
    *            useCard:true are rendered as interactive counter cards.
    */
   layout?: "cards" | "pages";
+  /** If true, a Text mode reader is available alongside the PDF viewer */
+  hasTextMode?: boolean;
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -61,6 +63,7 @@ const auradFathiya: DhikrCollection = {
     "The daily litany (Wird al-Lazim) recited morning and evening by the Tijaniyya order. The three core pillars — Istighfar, Salat al-Fatiha, and La ilaha illallah — are each recited 100 times. Read the original authenticated booklet below.",
   icon: "🕌",
   pdfPath: "/aurad-fathiya.pdf",
+  hasTextMode: true,
   sections: [],
 };
 
